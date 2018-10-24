@@ -1,6 +1,7 @@
 /*
 	@file
 	SID.c - a Max-Extention for SIDBlaster-USB
+	(c) by Andreas Schumm (gh0stless) for www.crazy-midi.de
 	Version v.0.1 started at: 06.12.2016
 	        v.0.2 started at: 11.09.2017
 			v.0.3 started at: 23.09.2017
@@ -8,7 +9,8 @@
 			v.0.5 started at: 22.10.2017
 			v.0.6 started at: 15.03.2018
 			v.0.7 started at: 24.07.2018
-	(c) by Andreas Schumm (gh0stless) for www.crazy-midi.de
+			v.0.8 started at: 24.10.2018
+			-Instanzverwaltung zugefügt
 */
 
 #include "ext.h"			// you must include this - it contains the external object's link to available Max functions
@@ -22,6 +24,8 @@ int Nr_Of_Instances = 0;
 int Number_Of_Devices = 0;
 HINSTANCE hardsiddll = 0;
 bool dll_initialized = FALSE;
+
+bool InUse[8] = { false, false, false, false, false, false, false, false };
 
 void ext_main(void *r)
 {
@@ -74,13 +78,14 @@ void ext_main(void *r)
 		
 		//check version & device count
 		int DLL_Version = (int)HardSID_Version();
+		Number_Of_Devices = (int)HardSID_Devices();
 		post("dll-version: %ld", (long)DLL_Version);
-		if (DLL_Version < 512) {
+		if ((DLL_Version < 512) || Number_Of_Devices>8) {
 			dll_initialized = FALSE;
 			post("wrong hardsid.dll Version");
 		}
 		else {
-			Number_Of_Devices = (int)HardSID_Devices();
+			
 			post("number of devices: %ld", (long)Number_Of_Devices);
 			dll_initialized = TRUE;
 		}
@@ -90,7 +95,7 @@ void ext_main(void *r)
 		post("hardsid.dll library failed to load!\n");
 	}
 
-	post("sid object v.0.7 loaded...",0);	// post any important info to the max window when our class is loaded
+	post("sid object v.0.8 loaded...",0);	// post any important info to the max window when our class is loaded
 }
 
 void *sid_new(long n)		// n = int argument typed into object box (A_DEFLONG) -- defaults to 0 if no args are typed
@@ -115,15 +120,7 @@ void *sid_new(long n)		// n = int argument typed into object box (A_DEFLONG) -- 
 	
 	post("a new sid object instance added to patch...",0); // post important info to the max window when new instance is created
 	Nr_Of_Instances++;
-	post("number of instances: %ld", Nr_Of_Instances);
-	x->My_Device = Nr_Of_Instances - 1;
-	
-	if (!dll_initialized) {
-		Nr_Of_Instances--;
-		post("number of instances: %dl", Nr_Of_Instances);
-		post("error! cant load hardsid.dll");
-		return(NULL);
-	}
+	post("number of instances: %dl", Nr_Of_Instances);
 
 	if ((Nr_Of_Instances > Number_Of_Devices)) {
 		Nr_Of_Instances--;
@@ -131,6 +128,27 @@ void *sid_new(long n)		// n = int argument typed into object box (A_DEFLONG) -- 
 		post("error! not enough SIDBlasters!");
 		return(NULL);
 	}
+
+
+	for (int i =0; i < Number_Of_Devices; i++)
+	{
+		if (!InUse[i]) {
+			x->My_Device = i;
+			InUse[i] = true;
+			break;
+		}
+	}
+
+	post("using device No.: %ld", x->My_Device);
+		
+	if (!dll_initialized) {
+		Nr_Of_Instances--;
+		post("error! cant load hardsid.dll");
+		post("number of instances: %dl", Nr_Of_Instances);
+		return(NULL);
+	}
+
+	
 
 	if (cb_init(x, &x->my_cb, MY_BUFFER_SIZE, sizeof(write_event))) {
 		post("Fatal! can't alloc mem");
@@ -158,6 +176,8 @@ void sid_free(t_sid *x)
 	cb_free(x, &x->my_cb);
 	//post(" I die!!");
 	Nr_Of_Instances--;
+	post("number of instances: %dl", Nr_Of_Instances);
+	InUse[x->My_Device] = false;
 }
 
 void *sid_threadproc(t_sid *x)
