@@ -1,0 +1,118 @@
+HardSID_SoftFlush can be used to indicate the hardsid.dll to immediately write the data buffer to the hardware 
+(it sends thesoftware buffer to the hardware) and then empty the software buffer.
+
+It is only used by ACID64 to mute or stop the SID sound. E.g. $00 is written to $d418 and then HardSID_SoftFlush 
+is called to make it effective immediately.
+
+HardSID_Flush is used to empty the hardware buffer. This will not clear the software buffer.
+
+You need to provide cycle information for your writes to the SID to make the writes exact.
+For USB hardware a software buffer is used to optimize the latency of the USB interface.
+
+You can decide to write every 20 millisecond to the hardware for your synthesizer and gather
+all writes for this time frame and have e.g. 8 cycles between the writes and the last write of the time frame
+should tell the remain cycles of this 20 millisecond.
+
+So e.g. you have 3 writes for this frame:
+
+FRAME_IN_CYCLES = 17734475 / 18 / 50;   // 50Hz in cycles for PAL clock
+
+cycles = 0;
+
+HardSID_Try_Write(0, cycles, 0x04, $41);
+
+cycles += 8;
+
+HardSID_Try_Write(0, cycles, 0x0b, $41);
+
+cycles += 8;
+
+HardSID_Try_Write(0, FRAME_IN_CYCLES - cycles, 0x12, $41);
+
+So the above writes write to device 0. First write writes to register
+4, second to 11 and last to 18. The last write makes sure that the
+next frame starts 20 milliseconds later.
+
+Make sure you use the HardSID_Try_Write method and check the return
+value to see if the software or hardware buffer is full. If that’s the
+case you need to wait a few milliseconds and try again.
+
+You need to make sure the buffer is always filled so that the timing is always correct.
+
+If you don't have anything to write for a frame, then just do this:
+
+HardSID_Try_Write(0, FRAME_IN_CYCLES, 0x1e, 0);
+
+This will write 0 to SID register $1E which will do nothing.
+
+Hi Andreas,
+
+If you simply want write to the sid at any given time just supply 0 as the cycle parameter, then the write will be scheduled immediately.
+
+The cycle exact timing is mainly neede because c64 music players handle the different sid "bugs" in very specific ways.
+For example: If you're not careful when you write to the gate and adsr registers, you can get no sound at all.
+Google "sid adsr" for more information.
+
+-Stein
+
+--------------------------------------------------------------------------------------------------------------------------------------------
+
+HardSID_SoftFlush kann verwendet werden, um die hardsid.dll anzuzeigen, um den Datenpuffer sofort an die Hardware zu schreiben
+(Es sendet den Softwarepuffer an die Hardware) und leert dann den Softwarepuffer.
+
+Es wird nur von ACID64 zum Stummschalten oder Stoppen des SID-Sounds verwendet. Z.B. $ 00 wird auf $ d418 geschrieben und dann HardSID_SoftFlush
+Wird aufgerufen, um es sofort wirksam zu machen.
+
+HardSID_Flush wird verwendet, um den Hardware-Puffer zu entleeren. Dadurch wird der Softwarepuffer nicht gelöscht.
+
+Sie müssen Zyklusinformationen für Ihre Schreibvorgänge an die SID geben, um die Schreibvorgänge genau zu machen.
+Für die USB-Hardware wird ein Softwarepuffer verwendet, um die Latenz der USB-Schnittstelle zu optimieren.
+
+Sie können entscheiden, alle 20 Millisekunden auf die Hardware für Ihren Synthesizer zu schreiben und zu sammeln
+Alle schreibt für diesen Zeitrahmen und haben z.B. 8 Zyklen zwischen den Schreibvorgängen und dem letzten Schreiben des Zeitrahmens
+Sollte die verbleibenden Zyklen dieser 20 Millisekunden erzählen.
+
+So z.B. Du hast 3 Schriften für diesen Rahmen:
+
+FRAME_IN_CYCLES = 17734475 / 18/50; // 50Hz in Zyklen für PAL Uhr
+
+Zyklen = 0;
+
+HardSID_Try_Write (0, Zyklen, 0x04, $ 41);
+
+Zyklen + = 8;
+
+HardSID_Try_Write (0, Zyklen, 0x0b, $ 41);
+
+Zyklen + = 8;
+
+HardSID_Try_Write (0, FRAME_IN_CYCLES - Zyklen, 0x12, $ 41);
+
+So schreibt das oben geschriebene Gerät auf das Gerät 0. Zuerst schreibe das Schreiben
+4, zweiter bis 11 und dauert bis 18. Das letzte Schreiben stellt sicher, dass die
+Der nächste Rahmen beginnt 20 Millisekunden später.
+
+Vergewissern Sie sich, dass Sie die Methode HardSID_Try_Write verwenden und die Rücksendung überprüfen
+Wert, um zu sehen, ob die Software oder der Hardware-Puffer voll ist. Wenn das der ist
+Sie müssen ein paar Millisekunden warten und es erneut versuchen.
+
+Sie müssen sicherstellen, dass der Puffer immer gefüllt ist, damit das Timing immer korrekt ist.
+
+Wenn du nichts für einen Rahmen schreibst, dann mach das einfach mal aus:
+
+HardSID_Try_Write (0, FRAME_IN_MILLISECOND, 0x1e, 0);
+
+Dies schreibt 0 an SID Register $ 1E, die nichts tun wird.
+
+Btw, ich glaube, ich war heute morgen etwas schläfrig. FRAME_IN_MILLISECOND sollte FRAME_IN_CYCLES heißen ;-)
+
+
+Hallo Andreas,
+
+Wenn du einfach zu einer bestimmten Zeit an die Sid schreiben willst, verstellst du nur 0 als Zyklusparameter, dann wird der Schreibvorgang sofort geplant.
+
+Der Zyklus genaue Timing ist vor allem Notwendigkeit, weil c64 Musik-Player die verschiedenen sid "Bugs" in sehr spezifischen Möglichkeiten zu behandeln.
+Zum Beispiel: Wenn Sie nicht vorsichtig sind, wenn Sie an das Tor und die Anzeigenregister schreiben, können Sie überhaupt keinen Ton bekommen.
+Google "sid adsr" für weitere Informationen.
+
+-Stein
