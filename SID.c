@@ -66,17 +66,26 @@ void ext_main(void *r)
 		post("hardsid.dll library loaded!\n");
 		HardSID_Version = (lpHardSID_Version)GetProcAddress(hardsiddll, "HardSID_Version");
 		HardSID_Devices = (lpHardSID_Devices)GetProcAddress(hardsiddll, "HardSID_Devices");
-		WriteToHardSID = (lpWriteToHardSID)GetProcAddress(hardsiddll, "WriteToHardSID");
-		ReadFromHardSID = (lpReadFromHardSID)GetProcAddress(hardsiddll, "ReadFromHardSID");
-		InitHardSID_Mapper = (lpInitHardSID_Mapper)GetProcAddress(hardsiddll, "InitHardSID_Mapper");
-		MuteHardSID_Line = (lpMuteHardSID_Line)GetProcAddress(hardsiddll, "MuteHardSID_Line");
 		HardSID_Delay = (lpHardSID_Delay)GetProcAddress(hardsiddll, "HardSID_Delay");
 		HardSID_Write = (lpHardSID_Write)GetProcAddress(hardsiddll, "HardSID_Write");
+		HardSID_Read = (lpHardSID_Read)GetProcAddress(hardsiddll, "HardSID_Read");
 		HardSID_Flush = (lpHardSID_Flush)GetProcAddress(hardsiddll, "HardSID_Flush");
 		HardSID_SoftFlush = (lpHardSID_SoftFlush)GetProcAddress(hardsiddll, "HardSID_SoftFlush");
 		HardSID_Lock = (lpHardSID_Lock)GetProcAddress(hardsiddll, "HardSID_Lock");
-		HardSID_Try_Write = (lpHardSID_Try_Write)GetProcAddress(hardsiddll, "HardSID_Try_Write");
+		HardSID_Filter = (lpHardSID_Filter)GetProcAddress(hardsiddll, "HardSID_Filter");
 		HardSID_Reset = (lpHardSID_Reset)GetProcAddress(hardsiddll, "HardSID_Reset");
+		HardSID_Sync = (lpHardSID_Sync)GetProcAddress(hardsiddll, "HardSID_Sync");
+		HardSID_Mute = (lpHardSID_Mute)GetProcAddress(hardsiddll, "HardSID_Mute");
+		HardSID_MuteAll = (lpHardSID_MuteAll)GetProcAddress(hardsiddll, "HardSID_MuteAll");
+		InitHardSID_Mapper = (lpInitHardSID_Mapper)GetProcAddress(hardsiddll, "InitHardSID_Mapper");
+		GetHardSIDCount = (lpGetHardSIDCount)GetProcAddress(hardsiddll, "GetHardSIDCount");
+		WriteToHardSID = (lpWriteToHardSID)GetProcAddress(hardsiddll, "WriteToHardSID");
+		ReadFromHardSID = (lpReadFromHardSID)GetProcAddress(hardsiddll, "ReadFromHardSID");
+		MuteHardSID_Line = (lpMuteHardSID_Line)GetProcAddress(hardsiddll, "MuteHardSID_Line");
+		HardSID_Reset2 = (lpHardSID_Reset2)GetProcAddress(hardsiddll, "HardSID_Reset2");
+		HardSID_Unlock = (lpHardSID_Unlock)GetProcAddress(hardsiddll, "HardSID_Unlock");
+		HardSID_Try_Write = (lpHardSID_Try_Write)GetProcAddress(hardsiddll, "HardSID_Try_Write");
+		HardSID_ExternalTiming = (lpHardSID_ExternalTiming)GetProcAddress(hardsiddll, "HardSID_ExternalTiming");
 		
 		//check version & device count
 		int DLL_Version = (int)HardSID_Version();
@@ -121,34 +130,33 @@ void *sid_new(long n)		// n = int argument typed into object box (A_DEFLONG) -- 
 	
 	post("a new sid object instance added to patch...",0); // post important info to the max window when new instance is created
 	Nr_Of_Instances++;
-	post("number of instances: %dl", Nr_Of_Instances);
+	post("number of instances: %ld", Nr_Of_Instances);
 
-	if (Nr_Of_Instances == 9) { //8 Sidblasters; all used
+	if (Nr_Of_Instances >= 9) { //8 Sidblasters; all used
 		post("error! 8 used Sidblasters");
 		Nr_Of_Instances--;
-		post("number of instances: %dl", Nr_Of_Instances);
+		post("number of instances: %ld", Nr_Of_Instances);
 		return(NULL);
-
 	}
 
 	if (!dll_initialized) {
 		post("error! cant load hardsid.dll");
 		Nr_Of_Instances--;
-		post("number of instances: %dl", Nr_Of_Instances);
+		post("number of instances: %ld", Nr_Of_Instances);
 		return(NULL);
 	}
 
 	if (Number_Of_Devices > 8) {
 		post("error! more than 8 devices");
 		Nr_Of_Instances--;
-		post("number of instances: %dl", Nr_Of_Instances);
+		post("number of instances: %ld", Nr_Of_Instances);
 		return(NULL);
 	}
 	
 	if (Nr_Of_Instances > Number_Of_Devices) {
 		post("error! not enough SIDBlasters!");
 		Nr_Of_Instances--;
-		post("number of instances: %dl", Nr_Of_Instances);
+		post("number of instances: %ld", Nr_Of_Instances);
 		return(NULL);
 	}
 	
@@ -160,6 +168,14 @@ void *sid_new(long n)		// n = int argument typed into object box (A_DEFLONG) -- 
 			break;
 		}
 	}
+
+	if (!(HardSID_Lock((Uint8)x->My_Device))) {
+		post("error! can't lock device!");
+		Nr_Of_Instances--;
+		post("number of instances: %ld", Nr_Of_Instances);
+		return(NULL);
+	}
+
 
 	post("using device No.: %ld", x->My_Device);
 	
@@ -175,6 +191,7 @@ void *sid_new(long n)		// n = int argument typed into object box (A_DEFLONG) -- 
 	}
 
 	sid_init(x);
+
 	return(x);					// return a reference to the object instance
 }
 
@@ -187,10 +204,10 @@ void sid_free(t_sid *x)
 		systhread_mutex_free(x->x_mutex);
 	// free ringbuffer
 	cb_free(x, &x->my_cb);
-	//post(" I die!!");
 	Nr_Of_Instances--;
-	post("number of instances: %dl", Nr_Of_Instances);
+	post("number of instances: %ld", Nr_Of_Instances);
 	InUse[x->My_Device] = false;
+	HardSID_Unlock((Uint8)x->My_Device);
 }
 
 void *sid_threadproc(t_sid *x)
