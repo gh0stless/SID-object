@@ -231,6 +231,7 @@ void *sid_threadproc(t_sid *x)
 			}
 			HardSID_SoftFlush(x->My_Device);
 		}
+		systhread_sleep(20);
 	}
 	x->x_systhread_cancel = false;							// reset cancel flag for next time, in case
 															// the thread is created again
