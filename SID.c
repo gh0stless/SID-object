@@ -24,7 +24,6 @@ int Nr_Of_Instances = 0;
 int Number_Of_Devices = 0;
 HINSTANCE hardsiddll = 0;
 bool dll_initialized = FALSE;
-
 bool InUse[8] = { false, false, false, false, false, false, false, false };
 
 void ext_main(void *r)
@@ -58,6 +57,9 @@ void ext_main(void *r)
 	sid_class = c;
 
 	//--------------------------------------------------------
+
+	post("sid object v.0.8 loaded...", 0);	// post any important info to the max window when our class is loaded
+
 	hardsiddll = LoadLibrary("hardsid.dll");
 	// Check to see if the library was loaded successfully 
 	if (hardsiddll != 0) {
@@ -85,7 +87,6 @@ void ext_main(void *r)
 			post("wrong hardsid.dll Version");
 		}
 		else {
-			
 			post("number of devices: %ld", (long)Number_Of_Devices);
 			dll_initialized = TRUE;
 		}
@@ -95,7 +96,7 @@ void ext_main(void *r)
 		post("hardsid.dll library failed to load!\n");
 	}
 
-	post("sid object v.0.8 loaded...",0);	// post any important info to the max window when our class is loaded
+	
 }
 
 void *sid_new(long n)		// n = int argument typed into object box (A_DEFLONG) -- defaults to 0 if no args are typed
@@ -122,15 +123,28 @@ void *sid_new(long n)		// n = int argument typed into object box (A_DEFLONG) -- 
 	Nr_Of_Instances++;
 	post("number of instances: %dl", Nr_Of_Instances);
 
-	if ((Nr_Of_Instances > Number_Of_Devices)) {
+	if (!dll_initialized) {
+		post("error! cant load hardsid.dll");
 		Nr_Of_Instances--;
 		post("number of instances: %dl", Nr_Of_Instances);
-		post("error! not enough SIDBlasters!");
 		return(NULL);
 	}
 
-
-	for (int i =0; i < Number_Of_Devices; i++)
+	if (Number_Of_Devices > 8) {
+		post("error! more than 8 devices");
+		Nr_Of_Instances--;
+		post("number of instances: %dl", Nr_Of_Instances);
+		return(NULL);
+	}
+	
+	if (Nr_Of_Instances > Number_Of_Devices) {
+		post("error! not enough SIDBlasters!");
+		Nr_Of_Instances--;
+		post("number of instances: %dl", Nr_Of_Instances);
+		return(NULL);
+	}
+	
+	for (int i =0; i < Number_Of_Devices; i++) 
 	{
 		if (!InUse[i]) {
 			x->My_Device = i;
@@ -140,16 +154,7 @@ void *sid_new(long n)		// n = int argument typed into object box (A_DEFLONG) -- 
 	}
 
 	post("using device No.: %ld", x->My_Device);
-		
-	if (!dll_initialized) {
-		Nr_Of_Instances--;
-		post("error! cant load hardsid.dll");
-		post("number of instances: %dl", Nr_Of_Instances);
-		return(NULL);
-	}
-
 	
-
 	if (cb_init(x, &x->my_cb, MY_BUFFER_SIZE, sizeof(write_event))) {
 		post("Fatal! can't alloc mem");
 		return(NULL);
