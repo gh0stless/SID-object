@@ -123,6 +123,14 @@ void *sid_new(long n)		// n = int argument typed into object box (A_DEFLONG) -- 
 	Nr_Of_Instances++;
 	post("number of instances: %dl", Nr_Of_Instances);
 
+	if (Nr_Of_Instances == 9) { //8 Sidblasters; all used
+		post("error! 8 used Sidblasters");
+		Nr_Of_Instances--;
+		post("number of instances: %dl", Nr_Of_Instances);
+		return(NULL);
+
+	}
+
 	if (!dll_initialized) {
 		post("error! cant load hardsid.dll");
 		Nr_Of_Instances--;
@@ -229,7 +237,6 @@ void sid_init(t_sid *x) {
 	post("reset & init SID");
 	//Init SID
 	HardSID_Reset(x->My_Device);
-	HardSID_Lock(x->My_Device);
 	HardSID_Flush(x->My_Device);
 
 	//Init Registers
