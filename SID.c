@@ -11,6 +11,8 @@
 			v.0.7 started at: 24.07.2018
 			v.0.8 started at: 24.10.2018
 			-Instanzverwaltung zugefügt
+			-lock/unlock
+			-fix threting
 */
 
 #include "ext.h"			// you must include this - it contains the external object's link to available Max functions
@@ -221,7 +223,7 @@ void *sid_threadproc(t_sid *x)
 			if (cb_pop_front(x, &x->my_cb, &lwe)) {
 				post("Fatal!");
 			}
-			systhread_mutex_unlock(x->x_mutex);
+			
 			Uint8 reg = lwe.WE_Reg_NR;
 			Uint8 val = lwe.WE_Value;
 			Uint8 RS = 0;
@@ -230,8 +232,11 @@ void *sid_threadproc(t_sid *x)
 				if (RS == HSID_USB_WSTATE_BUSY) systhread_sleep(20);
 			}
 			HardSID_SoftFlush(x->My_Device);
+			systhread_mutex_unlock(x->x_mutex);
 		}
-		systhread_sleep(20);
+		else {
+			systhread_sleep(20);
+		}
 	}
 	x->x_systhread_cancel = false;							// reset cancel flag for next time, in case
 															// the thread is created again
@@ -259,7 +264,7 @@ void sid_init(t_sid *x) {
 
 	//Init Registers
 	push_event(x, 0, 0x00);
-	Sleep(300);
+	systhread_sleep(300);
 	BYTE r;
 	for (r = 0; r <= NUMSIDREGS; r++) {
 		push_event(x, r, 0x00);
@@ -1128,7 +1133,7 @@ int cb_init(t_sid *x, circular_buffer *cb, size_t capacity, size_t sz)
 {
 	//cb->buffer = malloc(capacity * sz);
 	cb->buffer = sysmem_newptr(capacity * sz);
-	post("I have a pointer %lx and it is %ld bytes in size", cb->buffer, sysmem_ptrsize(cb->buffer));
+	//post("I have a pointer %lx and it is %ld bytes in size", cb->buffer, sysmem_ptrsize(cb->buffer));
 	if (cb->buffer == NULL) {
 		// handle error
 		post("mem alloc error!");

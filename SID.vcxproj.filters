@@ -19,6 +19,5 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="SID.h" />
-    <ClInclude Include="ringbuffer.h" />
   </ItemGroup>
 </Project>
