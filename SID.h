@@ -15,28 +15,28 @@ typedef unsigned char boolean;
 #define FRAME_IN_CYCLES 19705 //( 17734475 / 18 / 50 )   // 50Hz in cycles for PAL clock
 #define MY_BUFFER_SIZE 2048
 
-typedef Uint16(CALLBACK* lpHardSID_Version)(void);
-typedef Uint8(CALLBACK* lpHardSID_Devices)(void);
+typedef Uint16	(CALLBACK* lpHardSID_Version)(void);
+typedef Uint8	(CALLBACK* lpHardSID_Devices)(void);
 typedef void    (CALLBACK* lpHardSID_Delay)(Uint8 DeviceID, Uint16 Cycles);
 typedef void    (CALLBACK* lpHardSID_Write)(Uint8 DeviceID, Uint16 Cycles, Uint8 SID_reg, Uint8 Data);
-typedef Uint8(CALLBACK* lpHardSID_Read)(Uint8 DeviceID, Uint16 Cycles, Uint8 SID_reg);
+typedef Uint8	(CALLBACK* lpHardSID_Read)(Uint8 DeviceID, Uint16 Cycles, Uint8 SID_reg);
 typedef void    (CALLBACK* lpHardSID_Flush)(Uint8 DeviceID);
 typedef void    (CALLBACK* lpHardSID_SoftFlush)(Uint8 DeviceID);
-typedef boolean(CALLBACK* lpHardSID_Lock)(Uint8 DeviceID);
+typedef boolean	(CALLBACK* lpHardSID_Lock)(Uint8 DeviceID);
 typedef void    (CALLBACK* lpHardSID_Filter)(Uint8 DeviceID, boolean Filter);
 typedef void    (CALLBACK* lpHardSID_Reset)(Uint8 DeviceID);
 typedef void    (CALLBACK* lpHardSID_Sync)(Uint8 DeviceID);
 typedef void    (CALLBACK* lpHardSID_Mute)(Uint8 DeviceID, Uint8 Channel, boolean Mute);
 typedef void    (CALLBACK* lpHardSID_MuteAll)(Uint8 DeviceID, boolean Mute);
 typedef void    (CALLBACK* lpInitHardSID_Mapper)(void);
-typedef Uint8(CALLBACK* lpGetHardSIDCount)(void);
+typedef Uint8	(CALLBACK* lpGetHardSIDCount)(void);
 typedef void    (CALLBACK* lpWriteToHardSID)(Uint8 DeviceID, Uint8 SID_reg, Uint8 Data);
-typedef Uint8(CALLBACK* lpReadFromHardSID)(Uint8 DeviceID, Uint8 SID_reg);
+typedef Uint8	(CALLBACK* lpReadFromHardSID)(Uint8 DeviceID, Uint8 SID_reg);
 typedef void    (CALLBACK* lpMuteHardSID_Line)(int Mute);
 typedef void    (CALLBACK* lpHardSID_Reset2)(Uint8 DeviceID, Uint8 Volume);
 typedef void    (CALLBACK* lpHardSID_Unlock)(Uint8 DeviceID);
-typedef Uint8(CALLBACK* lpHardSID_Try_Write)(Uint8 DeviceID, Uint16 Cycles, Uint8 SID_reg, Uint8 Data);
-typedef BOOL(CALLBACK* lpHardSID_ExternalTiming)(Uint8 DeviceID);
+typedef Uint8	(CALLBACK* lpHardSID_Try_Write)(Uint8 DeviceID, Uint16 Cycles, Uint8 SID_reg, Uint8 Data);
+typedef BOOL	(CALLBACK* lpHardSID_ExternalTiming)(Uint8 DeviceID);
 
 
 lpHardSID_Version HardSID_Version = NULL;

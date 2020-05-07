@@ -13,6 +13,8 @@
 			-Instanzverwaltung zugefügt
 			-lock/unlock
 			-fix threting
+			v.0.8.1 started at: 07.05.2020
+			-error and info posting with a pattern, for parsing in max with error object
 */
 
 #include "ext.h"			// you must include this - it contains the external object's link to available Max functions
@@ -60,12 +62,12 @@ void ext_main(void *r)
 
 	//--------------------------------------------------------
 
-	post("sid object v.0.8 loaded...", 0);	// post any important info to the max window when our class is loaded
+	post("SID: info: sid object v.0.8.1 loaded...", 0);	// post any important info to the max window when our class is loaded
 
 	hardsiddll = LoadLibrary("hardsid.dll");
 	// Check to see if the library was loaded successfully 
 	if (hardsiddll != 0) {
-		post("hardsid.dll library loaded!\n");
+		post("SID: info: hardsid.dll library loaded!\n");
 		HardSID_Version = (lpHardSID_Version)GetProcAddress(hardsiddll, "HardSID_Version");
 		HardSID_Devices = (lpHardSID_Devices)GetProcAddress(hardsiddll, "HardSID_Devices");
 		HardSID_Delay = (lpHardSID_Delay)GetProcAddress(hardsiddll, "HardSID_Delay");
@@ -92,19 +94,19 @@ void ext_main(void *r)
 		//check version & device count
 		int DLL_Version = (int)HardSID_Version();
 		Number_Of_Devices = (int)HardSID_Devices();
-		post("dll-version: %ld", (long)DLL_Version);
+		post("SID: info: dll-version: %ld", (long)DLL_Version);
 		if ((DLL_Version < 512) || Number_Of_Devices>8) {
 			dll_initialized = FALSE;
-			post("wrong hardsid.dll Version");
+			error("SID: fatal! wrong hardsid.dll version or more than 8 devices");
 		}
 		else {
-			post("number of devices: %ld", (long)Number_Of_Devices);
+			post("SID: info: number of devices: %ld", (long)Number_Of_Devices);
 			dll_initialized = TRUE;
 		}
 	}
 	else {
 		dll_initialized = FALSE;
-		post("hardsid.dll library failed to load!\n");
+		error("SID: fatal! hardsid.dll library failed to load!\n");
 	}
 
 	
@@ -130,35 +132,35 @@ void *sid_new(long n)		// n = int argument typed into object box (A_DEFLONG) -- 
 	//x->x_qelem = qelem_new((t_object *)x, (method)sid_qtask);
 
 	
-	post("a new sid object instance added to patch...",0); // post important info to the max window when new instance is created
+	post("SID: info: a new sid object instance added to patch...",0); // post important info to the max window when new instance is created
 	Nr_Of_Instances++;
-	post("number of instances: %ld", Nr_Of_Instances);
+	post("SID: info: number of instances: %ld", Nr_Of_Instances);
 
 	if (Nr_Of_Instances >= 9) { //8 Sidblasters; all used
-		post("error! 8 used Sidblasters");
+		error("SID: fatal! All 8 Sidblasters in use");
 		Nr_Of_Instances--;
-		post("number of instances: %ld", Nr_Of_Instances);
+		post("SID: info: number of instances: %ld", Nr_Of_Instances);
 		return(NULL);
 	}
 
 	if (!dll_initialized) {
-		post("error! cant load hardsid.dll");
+		error("SID: fatal! can't init hardsid.dll");
 		Nr_Of_Instances--;
-		post("number of instances: %ld", Nr_Of_Instances);
+		post("SID: info: number of instances: %ld", Nr_Of_Instances);
 		return(NULL);
 	}
 
 	if (Number_Of_Devices > 8) {
-		post("error! more than 8 devices");
+		error("SID: fatal! more than 8 devices");
 		Nr_Of_Instances--;
-		post("number of instances: %ld", Nr_Of_Instances);
+		post("SID: info: number of instances: %ld", Nr_Of_Instances);
 		return(NULL);
 	}
 	
 	if (Nr_Of_Instances > Number_Of_Devices) {
-		post("error! not enough SIDBlasters!");
+		error("SID: fatal! not enough SIDBlasters conected!");
 		Nr_Of_Instances--;
-		post("number of instances: %ld", Nr_Of_Instances);
+		post("SID: info: number of instances: %ld", Nr_Of_Instances);
 		return(NULL);
 	}
 	
@@ -172,23 +174,23 @@ void *sid_new(long n)		// n = int argument typed into object box (A_DEFLONG) -- 
 	}
 
 	if (!(HardSID_Lock((Uint8)x->My_Device))) {
-		post("error! can't lock device!");
+		error("SID: fatal! can't lock device!");
 		Nr_Of_Instances--;
-		post("number of instances: %ld", Nr_Of_Instances);
+		post("SID: info: number of instances: %ld", Nr_Of_Instances);
 		return(NULL);
 	}
 
 
-	post("using device No.: %ld", x->My_Device);
+	post("SID: info: using device No.: %ld", x->My_Device);
 	
 	if (cb_init(x, &x->my_cb, MY_BUFFER_SIZE, sizeof(write_event))) {
-		post("Fatal! can't alloc mem");
+		error("SID: fatal! CB: can't alloc mem");
 		return(NULL);
 
 	}
 	
 	if (x->x_systhread == NULL) {
-		post("starting a new thread");
+		post("SID: info: starting a new thread");
 		systhread_create((method)sid_threadproc, x, 0, 0, 0, &x->x_systhread);
 	}
 
@@ -207,7 +209,7 @@ void sid_free(t_sid *x)
 	// free ringbuffer
 	cb_free(x, &x->my_cb);
 	Nr_Of_Instances--;
-	post("number of instances: %ld", Nr_Of_Instances);
+	post("SID: info: number of instances: %ld", Nr_Of_Instances);
 	InUse[x->My_Device] = false;
 	HardSID_Unlock((Uint8)x->My_Device);
 }
@@ -221,7 +223,7 @@ void *sid_threadproc(t_sid *x)
 		if (!(cb_empty(x, &x->my_cb))) {
 			systhread_mutex_lock(x->x_mutex);
 			if (cb_pop_front(x, &x->my_cb, &lwe)) {
-				post("Fatal!");
+				error("SID: fatal! CB:");
 			}
 			
 			Uint8 reg = lwe.WE_Reg_NR;
@@ -249,7 +251,7 @@ void sid_thread_stop(t_sid *x)
 	unsigned int ret;
 
 	if (x->x_systhread) {
-		post("stopping our thread");
+		post("SID: info: stopping our thread");
 		x->x_systhread_cancel = true;						// tell the thread to stop
 		systhread_join(x->x_systhread, &ret);					// wait for the thread to stop
 		x->x_systhread = NULL;
@@ -257,7 +259,7 @@ void sid_thread_stop(t_sid *x)
 }
 
 void sid_init(t_sid *x) {
-	post("reset & init SID");
+	post("SID: info: reset & init SID");
 	//Init SID
 	HardSID_Reset(x->My_Device);
 	HardSID_Flush(x->My_Device);
@@ -358,15 +360,15 @@ void sid_readraw(t_sid *x, t_symbol *s, long argc, t_atom *argv) {
 				}
 			}
 			else {
-				post("sid(readraw): error! value out of range");
+				error("SID: error! sid(readraw): value out of range");
 			}
 		}
 		else {
-			post("sid(readraw): error!!! not an Integer");
+			error("SID: error! sid(readraw): not an Integer");
 		}
 	}
 	else {
-		post("sid(readraw): error!!! not 1 parameter!");
+		error("SID: error! sid(readraw): not 1 parameter!");
 	}
 }
 
@@ -376,10 +378,10 @@ void sid_writeraw(t_sid *x, t_symbol *s, long argc, t_atom *argv) {
 	ap = argv;
 	if (argc == 2) {
 		//OK there is 2 parameters
-		post("rawmode is not implementet yet");
+		post("SID: error! rawmode is not implementet yet");
 	}
 	else {
-		post("sid(writeraw): error!!! not 2 parameters!");
+		error("SID: error! sid(writeraw): error!!! not 2 parameters!");
 	}
 }
 
@@ -390,7 +392,7 @@ void push_event(t_sid *x, Uint8 reg, Uint8 val) {
 	lwe.WE_Value = val;
 	systhread_mutex_lock(x->x_mutex);
 	if (cb_push_back(x, &x->my_cb, &lwe)) {
-		post("Fatal!");
+		error("SID: fatal! CB:");
 	}
 	systhread_mutex_unlock(x->x_mutex);
 	//post("I wrote %ld in %ld", (long)val, (long)reg);
@@ -465,12 +467,12 @@ void sid_volume(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 				x->SID_Voice1.VOLUME = n; //store volume
 			}
 			else {
-				post("sid(volume): error!!! value out of range");
+				error("SID: error! sid(volume): value out of range");
 			}
 		}
 	}
 	else {
-		post("sid(volume): error!!! not 1 parameter!");
+		error("SID: error! sid(volume): not 1 parameter!");
 	}
 }
 
@@ -503,17 +505,17 @@ void sid_ADSR(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 						break;
 					
 					default: 
-						post("sid(ADSR): error!!! not yet a voice!");
+						error("SID: error! sid(ADSR): not yet a voice!");
 						break;
 				}
 			}
 			else {
-				post("sid(ADSR): error!!! value out of range!");
+				error("SID: error! sid(ADSR): value out of range!");
 			}
 		}
 	}
 	else {
-		post("sid(ADSR): error!!! not 5 Parameters!");
+		error("SID: error! sid(ADSR): not 5 Parameters!");
 	}
 }
 
@@ -550,20 +552,20 @@ void sid_waveform(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 					x->SID_Voice3.WAVEFORM = w;		//Store Waveform
 					break;
 				default:
-					post("sid(waveform): error!!! not yet a voice!");
+					error("SID: error! sid(waveform): not yet a voice!");
 					break;
 				}
 			}
 			else {
-				post("sid(waveform): error!!! value out of range!");
+				error("SID: error! sid(waveform): value out of range!");
 			}
 		}
 		else {
-			post("sid(waveform): error!!! not right Parameters!");
+			error("SID: error! sid(waveform): not right Parameters!");
 		}
 	}
 	else {
-		post("sid(waveform): error!!! not 2 Parameters!");
+		error("SID: error! sid(waveform): not 2 Parameters!");
 	}
 }
 
@@ -598,20 +600,20 @@ void sid_pulse(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 						x->SID_Voice3.PULSE = w;		//Store Pulse
 						break;
 					default:
-						post("sid(pulse): error!!! not yet a voice!");
+						error("SID: error! sid(pulse): not yet a voice!");
 						break;					
 				}
 			}
 			else {
-				post("sid(pulse): error!!! value out of range!");
+				error("SID: error! sid(pulse): value out of range!");
 			}
 		}
 		else {
-			post("sid(pulse): rrror!!! not right parameters!");
+			error("SID: error! sid(pulse): not right parameters!");
 		}
 	}
 	else {
-		post("sid(pulse): error!!! not 2 parameters!");
+		error("SID: error! sid(pulse): not 2 parameters!");
 	}
 }
 
@@ -683,20 +685,20 @@ void sid_ringmod(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 					}
 					break;
 				default:
-					post("sid(ringmod): error!!! not yet a voice!");
+					error("SID: error! sid(ringmod): not yet a voice!");
 					break;
 				}
 			}
 			else {
-				post("sid(ringmod): error!!! value out of range!");
+				error("SID: error! sid(ringmod): value out of range!");
 			}
 		}
 		else {
-			post("sid(ringmod): error!!! not right Parameters!");
+			error("SID: error! sid(ringmod): not right Parameters!");
 		}
 	}
 	else {
-		post("sid(ringmod): error!!! not 2 Parameters!");
+		error("SID: error! sid(ringmod): not 2 Parameters!");
 	}
 }
 
@@ -769,15 +771,15 @@ void sid_sync(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 				}
 			}
 			else {
-				post("sid(sync): error!!! value out of range!");
+				error("SID: error! sid(sync): value out of range!");
 			}
 		}
 		else {
-			post("sid(sync): error!!! not right Parameters!");
+			error("SID: error! sid(sync): not right Parameters!");
 		}
 	}
 	else {
-		post("sid(sync): error!!! not 2 Parameters!");
+		error("SID: error! sid(sync): not 2 Parameters!");
 	}
 }
 
@@ -851,15 +853,15 @@ void sid_test(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 				}
 			}
 			else {
-				post("sid(test): error!!! value out of range!");
+				error("SID: error! sid(test): value out of range!");
 			}
 		}
 		else {
-			post("sid(test): error!!! not right Parameters!");
+			error("SID: error! sid(test): not right Parameters!");
 		}
 	}
 	else {
-		post("sid(test): error!!! not 2 Parameters!");
+		error("SID: error! sid(test): not 2 Parameters!");
 	}
 }
 
@@ -896,17 +898,17 @@ void sid_play(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 					x->SID_Voice3.CONTROL = c;
 					break;
 				default: {
-					post("sid(play): error!!! not yet a Voice!");
+					error("SID: error! sid(play): not yet a Voice!");
 					break;
 				}
 			}
 		}
 		else {
-			post("sid(play): error!!! wrong Parameter(s)!");
+			error("SID: error! sid(play): wrong Parameter(s)!");
 		}
 	}
 	else {
-		post("sid(play): error!!! not 1 Parameter!");
+		error("SID: error! sid(play): not 1 Parameter!");
 	}
 }
 
@@ -943,22 +945,22 @@ void sid_stop(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 					x->SID_Voice3.CONTROL = c;
 					break;
 				default:
-					post("sid(stop): error!!! not yet a Voice!");
+					error("SID: error! sid(stop): not yet a Voice!");
 					break;
 			}
 		}
 		else {
-			post("sid(stop): error!!! wrong Parameter(s)!");
+			error("SID: error! sid(stop): wrong Parameter(s)!");
 		}
 	}
 	else {
-		post("sid(stop): error!!! not 1 Parameter!");
+		error("SID: error! sid(stop): not 1 Parameter!");
 	}
 }
 
 void sid_anything(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 {
-	post("sid: error! wrong message!");
+	error("SID: fatal! error! wrong message!"); //only for test
 }
 
 void sid_freq1(t_sid *x, long n)
@@ -979,7 +981,7 @@ void sid_freq1(t_sid *x, long n)
 			x->SID_Voice1.FREQ_HI = SF_HI;
 		}
 		else {
-			post("SID (freq1) error! value out of range");
+			error("SID: error! (freq1): value out of range");
 		}	
 }
 
@@ -1001,7 +1003,7 @@ void sid_freq2(t_sid *x, long n)
 			x->SID_Voice2.FREQ_HI = SF_HI;
 		}
 		else {
-			post("SID (freq2) error! value out of range");
+			error("SID: error! (freq2): value out of range");
 
 		}
 }
@@ -1024,7 +1026,7 @@ void sid_freq3(t_sid *x, long n)
 			x->SID_Voice3.FREQ_HI = SF_HI;
 		}
 		else {
-				post("SID (freq3) error! value out of range");
+				error("SID: error! (freq3): value out of range");
 		}
 }
 
@@ -1042,7 +1044,7 @@ void sid_filter_freq(t_sid *x, long n)
 		x->SID_Voice1.FIL_FREQ_HIGH = HI;
 	}
 	else {
-		post("sid(freq): error!!! value out of range");
+		error("SID: error! sid(freq): value out of range");
 	}
 }
 
@@ -1064,12 +1066,12 @@ void sid_filter_res(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 				x->SID_Voice1.RES = (Uint8)n;
 			}
 			else {
-				post("sid(res): error!!! value out of range");
+				error("SID: error! sid(res): value out of range");
 			}
 		}
 	}
 	else {
-		post("sid(res): error!!! not 1 parameter!");
+		error("SID: error! sid(res): not 1 parameter!");
 	}
 }
 
@@ -1088,15 +1090,15 @@ void sid_filter_filt(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 					x->SID_Voice1.FILT = n;		//Store filt
 			}
 			else {
-				post("sid(filt): error!!! value out of range!");
+				error("SID: error! sid(filt): value out of range!");
 			}
 		}
 		else {
-			post("sid(filt): error!!! not right parameters!");
+			error("SID: error! sid(filt): not right parameters!");
 		}
 	}
 	else {
-		post("sid(filt): error!!! not 1 parameter!");
+		error("SID: error! sid(filt): not 1 parameter!");
 	}
 }
 
@@ -1115,15 +1117,15 @@ void sid_filter_mode(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 				x->SID_Voice1.FILTER = n;		//Store filt
 			}
 			else {
-				post("sid(mode): error!!! value out of range!");
+				error("SID: error! sid(mode): value out of range!");
 			}
 		}
 		else {
-			post("sid(mode): error!!! not right parameters!");
+			error("SID: error! sid(mode): not right parameters!");
 		}
 	}
 	else {
-		post("sid(mode): error!!! not 1 parameter!");
+		error("SID: error! sid(mode): not 1 parameter!");
 	}
 }
 
@@ -1136,7 +1138,7 @@ int cb_init(t_sid *x, circular_buffer *cb, size_t capacity, size_t sz)
 	//post("I have a pointer %lx and it is %ld bytes in size", cb->buffer, sysmem_ptrsize(cb->buffer));
 	if (cb->buffer == NULL) {
 		// handle error
-		post("mem alloc error!");
+		error("SID: fatal! CB: mem alloc error!");
 		return (1);
 	}
 		
@@ -1164,7 +1166,7 @@ int cb_push_back(t_sid *x, circular_buffer *cb, const void *item)
 {
 	if (cb->count == cb->capacity) {
 		// handle error
-		post("buffer overflow!");
+		error("SID: fatal CB: buffer overflow!");
 		return (1);
 	}
 	memcpy(cb->head, item, cb->sz);
@@ -1179,7 +1181,7 @@ int cb_pop_front(t_sid *x, circular_buffer *cb, void *item)
 {
 	if (cb->count == 0) {
 		// handle error
-		post("count= 0");
+		error("SID: fatal! CB: count= 0");
 		return (1);
 	}
 	memcpy(item, cb->tail, cb->sz);
