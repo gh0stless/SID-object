@@ -46,3 +46,7 @@ Oslo, 13.02.2015
 
 stein.pedersen@gmail.com
 
+-------------------------------------------
+this is a advanced version of the dll.
+-andreas 12.02.2020
+

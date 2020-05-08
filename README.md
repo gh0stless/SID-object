@@ -38,9 +38,17 @@ v.0.8
 - better threading and multitasking
 better multidevice, up to 8 devices tested
 
+see: [https://github.com/gh0stless/AIASS-for-MAX4LIVE](https://github.com/gh0stless/AIASS-for-MAX4LIVE/) for a Synthesizer that use that object.
+
+see: [https://github.com/gh0stless/SIDBlaster-USB-Tic-Tac-Edition](https://github.com/gh0stless/SIDBlaster-USB-Tic-Tac-Edition) for the hardware.
+
+(Unfortunately only for Windows at the moment.)
+
 Thanks to:
 
 *Stein Pedersen and Wilfred Bos for their support.
+
+##### Copyright © 2020 [www.crazy-midi.de](http://www.crazy-midi.de)
 
 Andreas Schumm (gh0stless)
 contact: info@crazy-mide.de
