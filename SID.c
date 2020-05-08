@@ -10,11 +10,11 @@
 			v.0.6 started at: 15.03.2018
 			v.0.7 started at: 24.07.2018
 			v.0.8 started at: 24.10.2018
-			-Instanzverwaltung zugefügt
-			-lock/unlock
-			-fix threting
+			 -Instanzverwaltung zugefügt
+			 -lock/unlock
+			 -fix threading
 			v.0.8.1 started at: 07.05.2020
-			-error and info posting with a pattern, for parsing in max with error object
+			 -error and info posting with a pattern, for parsing in max with error object
 */
 
 #include "ext.h"			// you must include this - it contains the external object's link to available Max functions
@@ -62,12 +62,12 @@ void ext_main(void *r)
 
 	//--------------------------------------------------------
 
-	post("SID: info: sid object v.0.8.1 loaded...", 0);	// post any important info to the max window when our class is loaded
+	post("SID: info: sid object v.0.8.1 loaded", 0);	// post any important info to the max window when our class is loaded
 
 	hardsiddll = LoadLibrary("hardsid.dll");
 	// Check to see if the library was loaded successfully 
 	if (hardsiddll != 0) {
-		post("SID: info: hardsid.dll library loaded!\n");
+		post("SID: info: hardsid.dll library loaded\n");
 		HardSID_Version = (lpHardSID_Version)GetProcAddress(hardsiddll, "HardSID_Version");
 		HardSID_Devices = (lpHardSID_Devices)GetProcAddress(hardsiddll, "HardSID_Devices");
 		HardSID_Delay = (lpHardSID_Delay)GetProcAddress(hardsiddll, "HardSID_Delay");
@@ -106,7 +106,7 @@ void ext_main(void *r)
 	}
 	else {
 		dll_initialized = FALSE;
-		error("SID: fatal! hardsid.dll library failed to load!\n");
+		error("SID: fatal! hardsid.dll library failed to load\n");
 	}
 
 	
@@ -132,12 +132,12 @@ void *sid_new(long n)		// n = int argument typed into object box (A_DEFLONG) -- 
 	//x->x_qelem = qelem_new((t_object *)x, (method)sid_qtask);
 
 	
-	post("SID: info: a new sid object instance added to patch...",0); // post important info to the max window when new instance is created
+	post("SID: info: a new sid object instance added to patch",0); // post important info to the max window when new instance is created
 	Nr_Of_Instances++;
 	post("SID: info: number of instances: %ld", Nr_Of_Instances);
 
 	if (Nr_Of_Instances >= 9) { //8 Sidblasters; all used
-		error("SID: fatal! All 8 Sidblasters in use");
+		error("SID: fatal! all 8 Sidblasters in use");
 		Nr_Of_Instances--;
 		post("SID: info: number of instances: %ld", Nr_Of_Instances);
 		return(NULL);
@@ -158,7 +158,7 @@ void *sid_new(long n)		// n = int argument typed into object box (A_DEFLONG) -- 
 	}
 	
 	if (Nr_Of_Instances > Number_Of_Devices) {
-		error("SID: fatal! not enough SIDBlasters conected!");
+		error("SID: fatal! not enough SIDBlasters connected");
 		Nr_Of_Instances--;
 		post("SID: info: number of instances: %ld", Nr_Of_Instances);
 		return(NULL);
@@ -174,7 +174,7 @@ void *sid_new(long n)		// n = int argument typed into object box (A_DEFLONG) -- 
 	}
 
 	if (!(HardSID_Lock((Uint8)x->My_Device))) {
-		error("SID: fatal! can't lock device!");
+		error("SID: fatal! can't lock device");
 		Nr_Of_Instances--;
 		post("SID: info: number of instances: %ld", Nr_Of_Instances);
 		return(NULL);
@@ -364,11 +364,11 @@ void sid_readraw(t_sid *x, t_symbol *s, long argc, t_atom *argv) {
 			}
 		}
 		else {
-			error("SID: error! sid(readraw): not an Integer");
+			error("SID: error! sid(readraw): not an integer");
 		}
 	}
 	else {
-		error("SID: error! sid(readraw): not 1 parameter!");
+		error("SID: error! sid(readraw): not 1 parameter");
 	}
 }
 
@@ -378,10 +378,10 @@ void sid_writeraw(t_sid *x, t_symbol *s, long argc, t_atom *argv) {
 	ap = argv;
 	if (argc == 2) {
 		//OK there is 2 parameters
-		post("SID: error! rawmode is not implementet yet");
+		error("SID: error! rawmode is not implementet yet");
 	}
 	else {
-		error("SID: error! sid(writeraw): error!!! not 2 parameters!");
+		error("SID: error! sid(writeraw): not 2 parameters");
 	}
 }
 
@@ -505,17 +505,17 @@ void sid_ADSR(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 						break;
 					
 					default: 
-						error("SID: error! sid(ADSR): not yet a voice!");
+						error("SID: error! sid(ADSR): not yet a voice");
 						break;
 				}
 			}
 			else {
-				error("SID: error! sid(ADSR): value out of range!");
+				error("SID: error! sid(ADSR): value out of range");
 			}
 		}
 	}
 	else {
-		error("SID: error! sid(ADSR): not 5 Parameters!");
+		error("SID: error! sid(ADSR): not 5 parameters");
 	}
 }
 
@@ -552,20 +552,20 @@ void sid_waveform(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 					x->SID_Voice3.WAVEFORM = w;		//Store Waveform
 					break;
 				default:
-					error("SID: error! sid(waveform): not yet a voice!");
+					error("SID: error! sid(waveform): not yet a voice");
 					break;
 				}
 			}
 			else {
-				error("SID: error! sid(waveform): value out of range!");
+				error("SID: error! sid(waveform): value out of range");
 			}
 		}
 		else {
-			error("SID: error! sid(waveform): not right Parameters!");
+			error("SID: error! sid(waveform): not right parameters");
 		}
 	}
 	else {
-		error("SID: error! sid(waveform): not 2 Parameters!");
+		error("SID: error! sid(waveform): not 2 parameters");
 	}
 }
 
@@ -600,20 +600,20 @@ void sid_pulse(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 						x->SID_Voice3.PULSE = w;		//Store Pulse
 						break;
 					default:
-						error("SID: error! sid(pulse): not yet a voice!");
+						error("SID: error! sid(pulse): not yet a voice");
 						break;					
 				}
 			}
 			else {
-				error("SID: error! sid(pulse): value out of range!");
+				error("SID: error! sid(pulse): value out of range");
 			}
 		}
 		else {
-			error("SID: error! sid(pulse): not right parameters!");
+			error("SID: error! sid(pulse): not right parameters");
 		}
 	}
 	else {
-		error("SID: error! sid(pulse): not 2 parameters!");
+		error("SID: error! sid(pulse): not 2 parameters");
 	}
 }
 
@@ -685,20 +685,20 @@ void sid_ringmod(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 					}
 					break;
 				default:
-					error("SID: error! sid(ringmod): not yet a voice!");
+					error("SID: error! sid(ringmod): not yet a voice");
 					break;
 				}
 			}
 			else {
-				error("SID: error! sid(ringmod): value out of range!");
+				error("SID: error! sid(ringmod): value out of range");
 			}
 		}
 		else {
-			error("SID: error! sid(ringmod): not right Parameters!");
+			error("SID: error! sid(ringmod): not right parameters");
 		}
 	}
 	else {
-		error("SID: error! sid(ringmod): not 2 Parameters!");
+		error("SID: error! sid(ringmod): not 2 parameters");
 	}
 }
 
@@ -771,15 +771,15 @@ void sid_sync(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 				}
 			}
 			else {
-				error("SID: error! sid(sync): value out of range!");
+				error("SID: error! sid(sync): value out of range");
 			}
 		}
 		else {
-			error("SID: error! sid(sync): not right Parameters!");
+			error("SID: error! sid(sync): not right parameters");
 		}
 	}
 	else {
-		error("SID: error! sid(sync): not 2 Parameters!");
+		error("SID: error! sid(sync): not 2 parameters");
 	}
 }
 
@@ -853,15 +853,15 @@ void sid_test(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 				}
 			}
 			else {
-				error("SID: error! sid(test): value out of range!");
+				error("SID: error! sid(test): value out of range");
 			}
 		}
 		else {
-			error("SID: error! sid(test): not right Parameters!");
+			error("SID: error! sid(test): not right parameters");
 		}
 	}
 	else {
-		error("SID: error! sid(test): not 2 Parameters!");
+		error("SID: error! sid(test): not 2 parameters");
 	}
 }
 
@@ -898,17 +898,17 @@ void sid_play(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 					x->SID_Voice3.CONTROL = c;
 					break;
 				default: {
-					error("SID: error! sid(play): not yet a Voice!");
+					error("SID: error! sid(play): not yet a voice");
 					break;
 				}
 			}
 		}
 		else {
-			error("SID: error! sid(play): wrong Parameter(s)!");
+			error("SID: error! sid(play): wrong parameter(s)");
 		}
 	}
 	else {
-		error("SID: error! sid(play): not 1 Parameter!");
+		error("SID: error! sid(play): not 1 parameter");
 	}
 }
 
@@ -945,22 +945,22 @@ void sid_stop(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 					x->SID_Voice3.CONTROL = c;
 					break;
 				default:
-					error("SID: error! sid(stop): not yet a Voice!");
+					error("SID: error! sid(stop): not yet a voice");
 					break;
 			}
 		}
 		else {
-			error("SID: error! sid(stop): wrong Parameter(s)!");
+			error("SID: error! sid(stop): wrong parameter(s)");
 		}
 	}
 	else {
-		error("SID: error! sid(stop): not 1 Parameter!");
+		error("SID: error! sid(stop): not 1 parameter");
 	}
 }
 
 void sid_anything(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 {
-	error("SID: fatal! error! wrong message!"); //only for test
+	error("SID: error! unknown message"); //only for test
 }
 
 void sid_freq1(t_sid *x, long n)
@@ -1090,15 +1090,15 @@ void sid_filter_filt(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 					x->SID_Voice1.FILT = n;		//Store filt
 			}
 			else {
-				error("SID: error! sid(filt): value out of range!");
+				error("SID: error! sid(filt): value out of range");
 			}
 		}
 		else {
-			error("SID: error! sid(filt): not right parameters!");
+			error("SID: error! sid(filt): not right parameters");
 		}
 	}
 	else {
-		error("SID: error! sid(filt): not 1 parameter!");
+		error("SID: error! sid(filt): not 1 parameter");
 	}
 }
 
@@ -1117,11 +1117,11 @@ void sid_filter_mode(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 				x->SID_Voice1.FILTER = n;		//Store filt
 			}
 			else {
-				error("SID: error! sid(mode): value out of range!");
+				error("SID: error! sid(mode): value out of range");
 			}
 		}
 		else {
-			error("SID: error! sid(mode): not right parameters!");
+			error("SID: error! sid(mode): not right parameters");
 		}
 	}
 	else {
@@ -1138,7 +1138,7 @@ int cb_init(t_sid *x, circular_buffer *cb, size_t capacity, size_t sz)
 	//post("I have a pointer %lx and it is %ld bytes in size", cb->buffer, sysmem_ptrsize(cb->buffer));
 	if (cb->buffer == NULL) {
 		// handle error
-		error("SID: fatal! CB: mem alloc error!");
+		error("SID: fatal! CB: mem alloc error");
 		return (1);
 	}
 		
@@ -1166,7 +1166,7 @@ int cb_push_back(t_sid *x, circular_buffer *cb, const void *item)
 {
 	if (cb->count == cb->capacity) {
 		// handle error
-		error("SID: fatal CB: buffer overflow!");
+		error("SID: fatal CB: buffer overflow");
 		return (1);
 	}
 	memcpy(cb->head, item, cb->sz);
