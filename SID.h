@@ -148,7 +148,7 @@ void sid_test(t_sid *x, t_symbol *s, long argc, t_atom *argv);
 void sid_thread_stop(t_sid *x);
 void *sid_threadproc(t_sid *x);
 
-//prototypes
+// circular buffer
 
 int cb_init(t_sid *x, circular_buffer *cb, size_t capacity, size_t sz);
 int cb_empty(t_sid *x, circular_buffer *cb);

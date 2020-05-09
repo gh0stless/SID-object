@@ -6,15 +6,7 @@ with most programs that support HardSID playback. The old driver program that
 came with the device (SIDBlaster.exe) must be disabled for the driver to work
 properly.
 
-The driver has been tested with ACID64Player Pro v3.6 Beta 5, Sidplay2, Sidplay26/W and VICE2.4
-
-As of 13.02.2015, the release version of ACID64Player does not support the SIDBlasterUSB 
-device, and you will need at least the 3.60 Beta 5 build for proper support. This can be
-downloaded from: 
-
-http://www.acid64.com/download/beta/acid64_player_pro_v360_beta5.zip
-
-This is partly due to the hardsid detection method used by older versions of the program. 
+The driver has been tested with ACID64Player Pro v3.6, Sidplay2, Sidplay26/W and VICE2.4
 
 Depending on your system, tunes with high data rates (multispeed tunes or digitunes) may 
 play slower if the latency of the USB driver is too high. This can be remedied by setting
@@ -45,8 +37,3 @@ already awesome ACID64Player with SIDBlasterUSB support
 Oslo, 13.02.2015
 
 stein.pedersen@gmail.com
-
--------------------------------------------
-this is a advanced version of the dll.
--andreas 12.02.2020
-
