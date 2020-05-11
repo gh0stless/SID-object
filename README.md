@@ -6,14 +6,14 @@ This object allows full access to a real SID-Chip.
 
 Installation:
 -------------
-copy the SID.mxe and or SID.mxe64 to
-...\documents\Max 7\Library
-or the SID.mxe64 to
-...\documents\Max 8\Library
+- copy SID.mxe and/or SID.mxe64 to
+ ...\documents\Max 7\Library
+ or the SID.mxe64 to
+ ...\documents\Max 8\Library
 
-copy the appropriate DLL into the program directory of Max
+- copy the appropriate DLL into the program directory of Max
 
-study the attached Max patch for the feature learning
+- study the attached Max patch for the feature learning
 
 versions history
 ----------------
