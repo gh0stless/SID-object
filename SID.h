@@ -1,8 +1,8 @@
 #pragma once
 
-typedef unsigned char Uint8;
-typedef unsigned short Uint16;
-typedef unsigned char boolean;
+typedef unsigned char	Uint8;
+typedef unsigned short	Uint16;
+typedef unsigned char	boolean;
 
 #define NUMSIDREGS 0x18 // numbers of (writable) SID-registers
 #define SIDWRITEDELAY 14 // lda $xxxx,x 4 cycles, sta $d400,x 5 cycles, dex 2 cycles, bpl 3 cycles
@@ -38,7 +38,6 @@ typedef void    (CALLBACK* lpHardSID_Unlock)(Uint8 DeviceID);
 typedef Uint8	(CALLBACK* lpHardSID_Try_Write)(Uint8 DeviceID, Uint16 Cycles, Uint8 SID_reg, Uint8 Data);
 typedef BOOL	(CALLBACK* lpHardSID_ExternalTiming)(Uint8 DeviceID);
 
-
 lpHardSID_Version HardSID_Version = NULL;
 lpHardSID_Devices HardSID_Devices = NULL;
 lpHardSID_Delay HardSID_Delay = NULL;
@@ -61,7 +60,6 @@ lpHardSID_Reset2 HardSID_Reset2 = NULL;
 lpHardSID_Unlock HardSID_Unlock = NULL;
 lpHardSID_Try_Write HardSID_Try_Write = NULL;
 lpHardSID_ExternalTiming HardSID_ExternalTiming = NULL;
-
 
 typedef enum {
 	HSID_USB_WSTATE_OK = 1, HSID_USB_WSTATE_BUSY,
@@ -118,6 +116,7 @@ typedef struct _sid {		// defines our object's internal variables for each insta
 	int My_Device;
 	write_event we[MY_BUFFER_SIZE];
 	circular_buffer my_cb;
+	bool raw_mode;
 } t_sid;
 
 void sid_play(t_sid *x, t_symbol *s, long argc, t_atom *argv);
@@ -142,6 +141,7 @@ int get_event(t_sid *x, Uint8 reg);
 void sid_init(t_sid *x);
 void sid_readraw(t_sid *x, t_symbol *s, long argc, t_atom *argv);
 void sid_writeraw(t_sid *x, t_symbol *s, long argc, t_atom *argv);
+void sid_read(t_sid *x, t_symbol *s, long argc, t_atom *argv);
 void sid_ringmod(t_sid *x, t_symbol *s, long argc, t_atom *argv);
 void sid_sync(t_sid *x, t_symbol *s, long argc, t_atom *argv);
 void sid_test(t_sid *x, t_symbol *s, long argc, t_atom *argv);
@@ -157,5 +157,3 @@ int cb_push_back(t_sid *x, circular_buffer *cb, const void *item);
 int cb_pop_front(t_sid *x, circular_buffer *cb, void *item);
 
 t_class *sid_class;		// global pointer to the object class - so max can reference the object
-
-

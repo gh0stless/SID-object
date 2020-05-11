@@ -277,6 +277,7 @@
   <ItemGroup>
     <Text Include="hardsid.dll how to.txt" />
     <Text Include="hints.txt" />
+    <Text Include="versions_history.txt" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="SID.h" />

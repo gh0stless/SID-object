@@ -4,44 +4,41 @@ Check this in your object_new function and if too high, return null
 to indicate that object construction failed. Otherwise,
 increment the count, and decrement it in the object_free function.
 
-
-	/*
-					int RS = 0;
-					if (x->buffer_index == 0) {
-						while (RS != HSID_USB_WSTATE_OK) {
-							RS = HardSID_Try_Write(x->My_Device, FRAME_IN_CYCLES, 0x1e, 0); //do nothing
-							if (RS == HSID_USB_WSTATE_BUSY) systhreat_sleep(20);
-							//if (RS != 1) post("RS (Idle) ist %ld", (long)RS);
-						}
-						//post("Done, Idle");
-					}
-					else {
-						//eSchreib Puffer
-						int cycles = 0;
-						do
-						{
-							cb_pop_front(x, &x->my_cb, &x->we[x->buffer_index]);
-							if (x->buffer_index == 1) {
-								int RS = 0;
-								while (RS != HSID_USB_WSTATE_OK) {
-									RS = HardSID_Try_Write(x->My_Device, (FRAME_IN_CYCLES - cycles), x->we[x->buffer_index].WE_Reg_NR, x->we[x->buffer_index].WE_Value); //last write
-									if (RS == HSID_USB_WSTATE_BUSY) systhreat_sleep(20);
-									//if (RS != 1) post("RS (Last Wrtite) ist %ld", (long)RS);
-								}
-								//post("Last Write");
-							}
-							else {
-								int RS = 0;
-								while (RS != HSID_USB_WSTATE_OK) {
-									RS = HardSID_Try_Write(x->My_Device, cycles, x->we[x->buffer_index].WE_Reg_NR, x->we[x->buffer_index].WE_Value);
-									if (RS == HSID_USB_WSTATE_BUSY) systhreat_sleep(20);
-									//if (RS != 1) post("RS ist %ld", (long)RS);
-								}
-								//post("Write with %ld cycles", (long)cycles);
-								systhreat_sleep(20);
-								cycles += 8;
-							}
-							x->buffer_index--;
-						} while (x->buffer_index > 0);
-					}
-				*/
+int RS = 0;
+if (x->buffer_index == 0) {
+	while (RS != HSID_USB_WSTATE_OK) {
+		RS = HardSID_Try_Write(x->My_Device, FRAME_IN_CYCLES, 0x1e, 0); //do nothing
+		if (RS == HSID_USB_WSTATE_BUSY) systhreat_sleep(20);
+		//if (RS != 1) post("RS (Idle) ist %ld", (long)RS);
+	}
+	//post("Done, Idle");
+}
+else {
+	//eSchreib Puffer
+	int cycles = 0;
+	do
+	{
+		cb_pop_front(x, &x->my_cb, &x->we[x->buffer_index]);
+		if (x->buffer_index == 1) {
+			int RS = 0;
+			while (RS != HSID_USB_WSTATE_OK) {
+				RS = HardSID_Try_Write(x->My_Device, (FRAME_IN_CYCLES - cycles), x->we[x->buffer_index].WE_Reg_NR, x->we[x->buffer_index].WE_Value); //last write
+				if (RS == HSID_USB_WSTATE_BUSY) systhreat_sleep(20);
+				//if (RS != 1) post("RS (Last Wrtite) ist %ld", (long)RS);
+			}
+			//post("Last Write");
+		}
+		else {
+			int RS = 0;
+			while (RS != HSID_USB_WSTATE_OK) {
+				RS = HardSID_Try_Write(x->My_Device, cycles, x->we[x->buffer_index].WE_Reg_NR, x->we[x->buffer_index].WE_Value);
+				if (RS == HSID_USB_WSTATE_BUSY) systhreat_sleep(20);
+				//if (RS != 1) post("RS ist %ld", (long)RS);
+			}
+			//post("Write with %ld cycles", (long)cycles);
+			systhreat_sleep(20);
+			cycles += 8;
+		}	
+		x->buffer_index--;
+	} while (x->buffer_index > 0);
+}

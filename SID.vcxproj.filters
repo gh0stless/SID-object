@@ -16,6 +16,9 @@
     <Text Include="hardsid.dll how to.txt">
       <Filter>Dokumentationen</Filter>
     </Text>
+    <Text Include="versions_history.txt">
+      <Filter>Dokumentationen</Filter>
+    </Text>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="SID.h" />

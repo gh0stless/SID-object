@@ -1,29 +1,16 @@
 /*
 	@file
 	SID.c - a Max-Extention for SIDBlaster-USB
-	(c) by Andreas Schumm (gh0stless) for www.crazy-midi.de
-	Version v.0.1 started at: 06.12.2016
-	        v.0.2 started at: 11.09.2017
-			v.0.3 started at: 23.09.2017
-			v.0.4 started at: 26.09.2017
-			v.0.5 started at: 22.10.2017
-			v.0.6 started at: 15.03.2018
-			v.0.7 started at: 24.07.2018
-			v.0.8 started at: 24.10.2018
-			 -Instanzverwaltung zugefügt
-			 -lock/unlock
-			 -fix threading
-			v.0.8.1 started at: 07.05.2020
-			 -error and info posting with a pattern, for parsing in max with error object
+	by Andreas Schumm (gh0stless) for www.crazy-midi.de
+	v.0.9.0 2020-05-11
 */
 
 #include "ext.h"			// you must include this - it contains the external object's link to available Max functions
 #include "ext_obex.h"		// this is required for all objects using the newer style for writing objects.
-#include "ext_systhread.h"  // the threat-stuff
+#include "ext_systhread.h"  // the thread-stuff
 #include <stddef.h>
 #include "SID.h"
 
-//global variables
 int Nr_Of_Instances = 0;
 int Number_Of_Devices = 0;
 HINSTANCE hardsiddll = 0;
@@ -52,6 +39,7 @@ void ext_main(void *r)
 	class_addmethod(c, (method)sid_init, "init", A_GIMME, 0);
 	class_addmethod(c, (method)sid_readraw, "readraw", A_GIMME, 0);
 	class_addmethod(c, (method)sid_writeraw, "writeraw", A_GIMME, 0);
+	class_addmethod(c, (method)sid_read, "read", A_GIMME, 0);
 	class_addmethod(c, (method)sid_ringmod, "ringmod", A_GIMME, 0);
 	class_addmethod(c, (method)sid_sync, "sync", A_GIMME, 0);
 	class_addmethod(c, (method)sid_test, "test", A_GIMME, 0);
@@ -62,7 +50,7 @@ void ext_main(void *r)
 
 	//--------------------------------------------------------
 
-	post("SID: info: sid object v.0.8.1 loaded", 0);	// post any important info to the max window when our class is loaded
+	post("SID: info: sid object v.0.9.0 loaded", 0);	// post any important info to the max window when our class is loaded
 
 	hardsiddll = LoadLibrary("hardsid.dll");
 	// Check to see if the library was loaded successfully 
@@ -108,8 +96,6 @@ void ext_main(void *r)
 		dll_initialized = FALSE;
 		error("SID: fatal! hardsid.dll library failed to load\n");
 	}
-
-	
 }
 
 void *sid_new(long n)		// n = int argument typed into object box (A_DEFLONG) -- defaults to 0 if no args are typed
@@ -120,18 +106,14 @@ void *sid_new(long n)		// n = int argument typed into object box (A_DEFLONG) -- 
 	intin(x, 3);	//freq. 3 inlet
 	intin(x, 2);    //freq. 2 inlet
 	intin(x, 1);    //freq. 1 inlet
-	x->x_outlet1 = bangout(x);	// create an bang outlet
-	x->x_outlet2 = intout(x);
-	x->x_outlet3 = intout(x);
-	x->x_outlet4 = intout(x);
-	x->x_outlet5 = intout(x);
-
+	x->x_outlet1 = intout(x);	//register 28
+	x->x_outlet2 = intout(x);	//register 27
+	x->x_outlet3 = intout(x);	//register 26
+	x->x_outlet4 = intout(x);	//register 25
+	x->x_outlet5 = bangout(x);	//create an bang outlet
 	x->x_systhread = NULL;
 	systhread_mutex_new(&x->x_mutex, 0);
-
-	//x->x_qelem = qelem_new((t_object *)x, (method)sid_qtask);
-
-	
+			
 	post("SID: info: a new sid object instance added to patch",0); // post important info to the max window when new instance is created
 	Nr_Of_Instances++;
 	post("SID: info: number of instances: %ld", Nr_Of_Instances);
@@ -196,7 +178,7 @@ void *sid_new(long n)		// n = int argument typed into object box (A_DEFLONG) -- 
 
 	sid_init(x);
 
-	return(x);					// return a reference to the object instance
+	return(x); // return a reference to the object instance
 }
 
 void sid_free(t_sid *x)
@@ -253,7 +235,7 @@ void sid_thread_stop(t_sid *x)
 	if (x->x_systhread) {
 		post("SID: info: stopping our thread");
 		x->x_systhread_cancel = true;						// tell the thread to stop
-		systhread_join(x->x_systhread, &ret);					// wait for the thread to stop
+		systhread_join(x->x_systhread, &ret);				// wait for the thread to stop
 		x->x_systhread = NULL;
 	}
 }
@@ -263,6 +245,8 @@ void sid_init(t_sid *x) {
 	//Init SID
 	HardSID_Reset(x->My_Device);
 	HardSID_Flush(x->My_Device);
+
+	x->raw_mode = false;
 
 	//Init Registers
 	push_event(x, 0, 0x00);
@@ -328,8 +312,51 @@ void sid_init(t_sid *x) {
 	x->SID_Voice3.RES = 0;
 }
 
+void sid_read(t_sid *x, t_symbol *s, long argc, t_atom *argv) {
+	if (!x->raw_mode) {
+		t_atom *ap;
+		ap = argv;
+		if (argc == 1) {
+			//OK there is 1 parameter
+			if (atom_gettype(ap++) == A_LONG) {
+				ap = argv;
+				Uint8 n = atom_getlong(ap++);
+				if ((n >= (NUMSIDREGS + 1)) && (n <= (NUMSIDREGS + 4))) {
+					int m = 0;
+					m = get_event(x, n);
+					//post("SID: debug: I read: %ld from %ld", m, n);
+					switch (n)
+					{
+					case 25: { outlet_int(x->x_outlet4, m);
+						break; }
+					case 26: { outlet_int(x->x_outlet3, m);
+						break; }
+					case 27: { outlet_int(x->x_outlet2, m);
+						break; }
+					case 28: { outlet_int(x->x_outlet1, m);
+						break; }
+					default:
+						break;
+					}
+				}
+				else {
+					error("SID: error! sid(read): not a valid register");
+				}
+			}
+			else {
+				error("SID: error! sid(read): not an integer");
+			}
+		}
+		else {
+			error("SID: error! sid(read): not 1 parameter");
+		}
+	}
+	else {
+		error("SID: error! sid(read): i'am in raw mode");
+	}
+}
+
 void sid_readraw(t_sid *x, t_symbol *s, long argc, t_atom *argv) {
-	//RAW-Mode
 	t_atom *ap;
 	ap = argv;
 	if (argc == 1) {
@@ -337,13 +364,15 @@ void sid_readraw(t_sid *x, t_symbol *s, long argc, t_atom *argv) {
 		if (atom_gettype(ap++) == A_LONG) {
 			ap = argv;
 			Uint8 n = atom_getlong(ap++);
-			if ((n >= 25) && (n <= 28)) {
-				//post("I have to read from %ld", n);
-				//so dann lies mal
+			if ((n >= (NUMSIDREGS+1)) && (n <= (NUMSIDREGS+4))) {
+				if (!x->raw_mode) {
+					x->raw_mode = true;
+					post("SID: info: (readraw) raw mode is on now, only reset can cancel raw mode now");
+				}
 				int m = 0;
 				m = get_event(x, n);
-				//post("I read : %ld",m);
-				
+				//post("SID: debug: I read : %ld from %ld in raw mode",m,n);
+				//outlet_bang(x->x_outlet5); //reserved
 				switch (n)
 				{
 				case 25: { outlet_int(x->x_outlet4, m);
@@ -354,13 +383,12 @@ void sid_readraw(t_sid *x, t_symbol *s, long argc, t_atom *argv) {
 					break; }
 				case 28: { outlet_int(x->x_outlet1, m);
 					break; }
-
 				default:
 					break;
 				}
 			}
 			else {
-				error("SID: error! sid(readraw): value out of range");
+				error("SID: error! sid(readraw): not a valid register");
 			}
 		}
 		else {
@@ -373,12 +401,34 @@ void sid_readraw(t_sid *x, t_symbol *s, long argc, t_atom *argv) {
 }
 
 void sid_writeraw(t_sid *x, t_symbol *s, long argc, t_atom *argv) {
-	//RAW-Mode
 	t_atom *ap;
 	ap = argv;
 	if (argc == 2) {
 		//OK there is 2 parameters
-		error("SID: error! rawmode is not implementet yet");
+		if ((atom_gettype(ap++) == A_LONG) && (atom_gettype(ap++) == A_LONG)) {
+				ap = argv;
+				int n = atom_getlong(ap++);
+				Uint8 w = atom_getlong(ap++);
+				if ((n >= 0) && (n <= (NUMSIDREGS-1))) {
+					if (w >=0 && w <= 0xFF) {
+						if (!x->raw_mode) {
+							x->raw_mode = true;
+							post("SID: info: (writeraw) raw mode is on now, only reset can cancel raw mode now");
+						}
+						push_event(x,(Uint8)n, w);
+						//outlet_bang(x->x_outlet5); //reserved
+					}
+					else {
+						error("SID: error! sid(writeraw): not a valid value");
+					}
+				}
+				else {
+					error("SID: error! sid(writeraw): not a valid register no.");
+				}
+		}
+		else {
+			error("SID: error! sid(writeraw): not right parameters");
+		}
 	}
 	else {
 		error("SID: error! sid(writeraw): not 2 parameters");
@@ -405,7 +455,7 @@ int get_event(t_sid *x, Uint8 reg) {
 	//val = HardSID_Read(x->My_Device, 0, reg);
 	val = ReadFromHardSID(x->My_Device, reg);
 	systhread_mutex_unlock(x->x_mutex);
-	//post("I get %ld from %ld", (long)val, (long)reg);
+	//post("I got %ld from %ld", (long)val, (long)reg);
 	return((int)val);
 }
 
@@ -414,7 +464,7 @@ void sid_assist(t_sid *x, void *b, long m, long a, char *s) // 4 final arguments
 	if (m == ASSIST_OUTLET)
 		switch (a) {
 		case 0:
-			sprintf(s, "bang, if it wants");
+			sprintf(s, "bang, not used yet");
 			break;
 		case 1:
 			sprintf(s, "result reading register 25");
@@ -432,16 +482,16 @@ void sid_assist(t_sid *x, void *b, long m, long a, char *s) // 4 final arguments
 	else {
 		switch (a) {
 		case 0:
-			sprintf(s, "Set and Play");
+			sprintf(s, "set and play");
 			break;
 		case 1:
-			sprintf(s, "Freq. of Voice 1");
+			sprintf(s, "freq. of voice 1");
 			break;
 		case 2:
-			sprintf(s, "Freq. of Voice 2");
+			sprintf(s, "freq. of voice 2");
 			break;
 		case 3:
-			sprintf(s, "Freq. of Voice 3");
+			sprintf(s, "freq. of voice 3");
 			break;
 		case 4:
 			sprintf(s, "filter freq.");
@@ -452,50 +502,56 @@ void sid_assist(t_sid *x, void *b, long m, long a, char *s) // 4 final arguments
 
 void sid_volume(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 {
-	t_atom *ap;
-	ap = argv;
-	if (argc == 1) {
-		//OK there is 1 parameter
-		if (atom_gettype(ap++) == A_LONG) {
-			ap = argv;
-			Uint8 n = atom_getlong(ap++);
-			//n is volume 0-15
-			if ((n >= 0) && (n <= 15)) {
-				Uint8 m = x->SID_Voice1.FILTER; // Get Filter
-				Uint8 o = n + (m << 4);
-				push_event(x, 24, (Uint8)o);
-				x->SID_Voice1.VOLUME = n; //store volume
+	if (!x->raw_mode) {
+		t_atom *ap;
+		ap = argv;
+		if (argc == 1) {
+			//OK there is 1 parameter
+			if (atom_gettype(ap++) == A_LONG) {
+				ap = argv;
+				Uint8 n = atom_getlong(ap++);
+				//n is volume 0-15
+				if ((n >= 0) && (n <= 15)) {
+					Uint8 m = x->SID_Voice1.FILTER; // Get Filter
+					Uint8 o = n + (m << 4);
+					push_event(x, 24, (Uint8)o);
+					x->SID_Voice1.VOLUME = n; //store volume
+				}
+				else {
+					error("SID: error! sid(volume): value out of range");
+				}
 			}
-			else {
-				error("SID: error! sid(volume): value out of range");
-			}
+		}
+		else {
+			error("SID: error! sid(volume): not 1 parameter!");
 		}
 	}
 	else {
-		error("SID: error! sid(volume): not 1 parameter!");
+		error("SID: error! sid(volume): i'am in raw mode");
 	}
 }
 
 void sid_ADSR(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 {
-	t_atom *ap;
-	ap = argv;
-	if (argc == 5) {
-		//OK there is 5 parameters
-		if ((atom_gettype(ap++) == A_LONG) && (atom_gettype(ap++) == A_LONG) && (atom_gettype(ap++) == A_LONG) && (atom_gettype(ap++) == A_LONG) && (atom_gettype(ap++) == A_LONG)) {
-			ap = argv;
-			Uint8 n = atom_getlong(ap++);
-			Uint8 A = atom_getlong(ap++);
-			Uint8 D = atom_getlong(ap++);
-			Uint8 S = atom_getlong(ap++);
-			Uint8 R = atom_getlong(ap++);
-			if ((A >= 0 && A <= 15) && (D >= 0 && D <= 15) && (S >= 0 && S <= 15) && (R >= 0 && R <= 15)) {
-				switch (n) {
-					case 0: 
+	if (!x->raw_mode) {
+		t_atom *ap;
+		ap = argv;
+		if (argc == 5) {
+			//OK there is 5 parameters
+			if ((atom_gettype(ap++) == A_LONG) && (atom_gettype(ap++) == A_LONG) && (atom_gettype(ap++) == A_LONG) && (atom_gettype(ap++) == A_LONG) && (atom_gettype(ap++) == A_LONG)) {
+				ap = argv;
+				Uint8 n = atom_getlong(ap++);
+				Uint8 A = atom_getlong(ap++);
+				Uint8 D = atom_getlong(ap++);
+				Uint8 S = atom_getlong(ap++);
+				Uint8 R = atom_getlong(ap++);
+				if ((A >= 0 && A <= 15) && (D >= 0 && D <= 15) && (S >= 0 && S <= 15) && (R >= 0 && R <= 15)) {
+					switch (n) {
+					case 0:
 						push_event(x, 5, (Uint8)((A << 4) + D)); //AD in 5
 						push_event(x, 6, (Uint8)((S << 4) + R)); //SR in 6
 						break;
-					case 1: 
+					case 1:
 						push_event(x, 12, (Uint8)((A << 4) + D)); //AD in 12
 						push_event(x, 13, (Uint8)((S << 4) + R)); //SR in 13
 						break;
@@ -503,87 +559,97 @@ void sid_ADSR(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 						push_event(x, 19, (Uint8)((A << 4) + D)); //AD in 19
 						push_event(x, 20, (Uint8)((S << 4) + R)); //SR in 20
 						break;
-					
-					default: 
+
+					default:
 						error("SID: error! sid(ADSR): not yet a voice");
 						break;
+					}
+				}
+				else {
+					error("SID: error! sid(ADSR): value out of range");
 				}
 			}
-			else {
-				error("SID: error! sid(ADSR): value out of range");
-			}
+		}
+		else {
+			error("SID: error! sid(ADSR): not 5 parameters");
 		}
 	}
 	else {
-		error("SID: error! sid(ADSR): not 5 parameters");
+		error("SID: error! sid(ADSR): i'am in raw mode");
 	}
 }
 
 void sid_waveform(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 {
-	t_atom *ap;
-	ap = argv;
-	if (argc == 2) {
-		//OK there is 2 parameters
-		if ((atom_gettype(ap++) == A_LONG) && (atom_gettype(ap++) == A_LONG)) {
-			ap = argv;
-			int n = atom_getlong(ap++);
-			Uint8 w = atom_getlong(ap++);
-			if (w >= 0 && w <= 15) {
-				Uint8 m = 0;
-				switch (n) {
-				case 0:
-					m = x->SID_Voice1.CONTROL;	// Get Control-Nible
-					if (w >= 8) m = m | 0b00001000; //Rausch-Bug
-					push_event(x, 4, (Uint8)((w << 4)+m));
-					x->SID_Voice1.WAVEFORM = w;		//Store Waveform
-					break;
-				case 1:
-					m = x->SID_Voice2.CONTROL;	// Get Control-Nible
-					if (w >= 8) m = m | 0b00001000; //Rausch-Bug
-					push_event(x, 11, (Uint8)((w << 4)+m));
-					x->SID_Voice2.WAVEFORM = w;		//Store Waveform
-					break;
-				
-				case 2:
-					m = x->SID_Voice3.CONTROL;	// Get Control-Nible
-					if (w >= 8) m = m | 0b00001000; //Rausch-Bug
-					push_event(x, 18, (Uint8)((w << 4)+m));
-					x->SID_Voice3.WAVEFORM = w;		//Store Waveform
-					break;
-				default:
-					error("SID: error! sid(waveform): not yet a voice");
-					break;
+	if (!x->raw_mode) {
+		t_atom *ap;
+		ap = argv;
+		if (argc == 2) {
+			//OK there is 2 parameters
+			if ((atom_gettype(ap++) == A_LONG) && (atom_gettype(ap++) == A_LONG)) {
+				ap = argv;
+				int n = atom_getlong(ap++);
+				Uint8 w = atom_getlong(ap++);
+				if (w >= 0 && w <= 15) {
+					Uint8 m = 0;
+					switch (n) {
+					case 0:
+						m = x->SID_Voice1.CONTROL;	// Get Control-Nible
+						if (w >= 8) m = m | 0b00001000; //Rausch-Bug
+						push_event(x, 4, (Uint8)((w << 4) + m));
+						x->SID_Voice1.WAVEFORM = w;		//Store Waveform
+						break;
+					case 1:
+						m = x->SID_Voice2.CONTROL;	// Get Control-Nible
+						if (w >= 8) m = m | 0b00001000; //Rausch-Bug
+						push_event(x, 11, (Uint8)((w << 4) + m));
+						x->SID_Voice2.WAVEFORM = w;		//Store Waveform
+						break;
+
+					case 2:
+						m = x->SID_Voice3.CONTROL;	// Get Control-Nible
+						if (w >= 8) m = m | 0b00001000; //Rausch-Bug
+						push_event(x, 18, (Uint8)((w << 4) + m));
+						x->SID_Voice3.WAVEFORM = w;		//Store Waveform
+						break;
+					default:
+						error("SID: error! sid(waveform): not yet a voice");
+						break;
+					}
+				}
+				else {
+					error("SID: error! sid(waveform): value out of range");
 				}
 			}
 			else {
-				error("SID: error! sid(waveform): value out of range");
+				error("SID: error! sid(waveform): not right parameters");
 			}
 		}
 		else {
-			error("SID: error! sid(waveform): not right parameters");
+			error("SID: error! sid(waveform): not 2 parameters");
 		}
 	}
 	else {
-		error("SID: error! sid(waveform): not 2 parameters");
+		error("SID: error! sid(waveform): i'am in raw mode");
 	}
 }
 
 void sid_pulse(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 {
-	t_atom *ap;
-	ap = argv;
-	if (argc == 2) {
-		//OK there is 2 parameters
-		if ((atom_gettype(ap++) == A_LONG) && (atom_gettype(ap++) == A_LONG)) {
-			ap = argv;
-			int n = atom_getlong(ap++);
-			Uint16 w = atom_getlong(ap++);
-			Uint8 l = (Uint8)w;
-			Uint16 a = (w & 0b0000111100000000) >> 8;
-			Uint8 h = (Uint8)a;
-			if (w >= 0 && w <= 4095) {
-				switch (n) {
+	if (!x->raw_mode) {
+		t_atom *ap;
+		ap = argv;
+		if (argc == 2) {
+			//OK there is 2 parameters
+			if ((atom_gettype(ap++) == A_LONG) && (atom_gettype(ap++) == A_LONG)) {
+				ap = argv;
+				int n = atom_getlong(ap++);
+				Uint16 w = atom_getlong(ap++);
+				Uint8 l = (Uint8)w;
+				Uint16 a = (w & 0b0000111100000000) >> 8;
+				Uint8 h = (Uint8)a;
+				if (w >= 0 && w <= 4095) {
+					switch (n) {
 					case 0:
 						push_event(x, 2, (Uint8)l);
 						push_event(x, 3, (Uint8)h);
@@ -601,289 +667,309 @@ void sid_pulse(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 						break;
 					default:
 						error("SID: error! sid(pulse): not yet a voice");
-						break;					
+						break;
+					}
+				}
+				else {
+					error("SID: error! sid(pulse): value out of range");
 				}
 			}
 			else {
-				error("SID: error! sid(pulse): value out of range");
+				error("SID: error! sid(pulse): not right parameters");
 			}
 		}
 		else {
-			error("SID: error! sid(pulse): not right parameters");
+			error("SID: error! sid(pulse): not 2 parameters");
 		}
 	}
 	else {
-		error("SID: error! sid(pulse): not 2 parameters");
+		error("SID: error! sid(pulse): i'am in raw mode");
 	}
 }
 
 void sid_ringmod(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 {
-	t_atom *ap;
-	ap = argv;
-	if (argc == 2) {
-		//OK there is 2 parameters
-		if ((atom_gettype(ap++) == A_LONG) && (atom_gettype(ap++) == A_LONG)) {
-			ap = argv;
-			int n = atom_getlong(ap++);
-			int w = atom_getlong(ap++);
-			if ((w >= 0) && (w <= 1)) {
-				switch (n) {
-				case 0:
-					if (w == 1) {
-						Uint8 r = x->SID_Voice1.CONTROL; //load backup
-						Uint8 s = r | 0b00000100; //set Bit
-						Uint8 t = x->SID_Voice1.WAVEFORM;
-						Uint8 u = (t << 4) + s; //restore register
-						push_event(x, 4, (Uint8)u); //write to SID
-						x->SID_Voice1.CONTROL = s; //do backup
-					}
-					else {
-						Uint8 r = x->SID_Voice1.CONTROL; //load backup
-						Uint8 s = r & 0b11111011; //clear bit
-						Uint8 t = x->SID_Voice1.WAVEFORM;
-						Uint8 u = (t << 4) + s; //restore register
-						push_event(x, 4, (Uint8)u); //write to SID
-						x->SID_Voice1.CONTROL = s; //do backup
+	if (!x->raw_mode) {
+		t_atom *ap;
+		ap = argv;
+		if (argc == 2) {
+			//OK there is 2 parameters
+			if ((atom_gettype(ap++) == A_LONG) && (atom_gettype(ap++) == A_LONG)) {
+				ap = argv;
+				int n = atom_getlong(ap++);
+				int w = atom_getlong(ap++);
+				if ((w >= 0) && (w <= 1)) {
+					switch (n) {
+					case 0:
+						if (w == 1) {
+							Uint8 r = x->SID_Voice1.CONTROL; //load backup
+							Uint8 s = r | 0b00000100; //set Bit
+							Uint8 t = x->SID_Voice1.WAVEFORM;
+							Uint8 u = (t << 4) + s; //restore register
+							push_event(x, 4, (Uint8)u); //write to SID
+							x->SID_Voice1.CONTROL = s; //do backup
+						}
+						else {
+							Uint8 r = x->SID_Voice1.CONTROL; //load backup
+							Uint8 s = r & 0b11111011; //clear bit
+							Uint8 t = x->SID_Voice1.WAVEFORM;
+							Uint8 u = (t << 4) + s; //restore register
+							push_event(x, 4, (Uint8)u); //write to SID
+							x->SID_Voice1.CONTROL = s; //do backup
 
+						}
+						break;
+					case 1:
+						if (w == 1) {
+							Uint8 r = x->SID_Voice2.CONTROL; //load backup
+							Uint8 s = r | 0b00000100; //set Bit
+							Uint8 t = x->SID_Voice2.WAVEFORM;
+							Uint8 u = (t << 4) + s; //restore register
+							push_event(x, 11, (Uint8)u); //write to SID
+							x->SID_Voice2.CONTROL = s; //do backup
+						}
+						else {
+							Uint8 r = x->SID_Voice2.CONTROL; //load backup
+							Uint8 s = r & 0b11111011; //clear bit
+							Uint8 t = x->SID_Voice2.WAVEFORM;
+							Uint8 u = (t << 4) + s; //restore register
+							push_event(x, 11, (Uint8)u); //write to SID
+							x->SID_Voice2.CONTROL = s; //do backup
+						}
+						break;
+					case 2:
+						if (w == 1) {
+							Uint8 r = x->SID_Voice3.CONTROL; //load backup
+							Uint8 s = r | 0b00000100; //set Bit
+							Uint8 t = x->SID_Voice3.WAVEFORM;
+							Uint8 u = (t << 4) + s; //restore register
+							push_event(x, 18, (Uint8)u); //write to SID
+							x->SID_Voice3.CONTROL = s; //do backup
+						}
+						else {
+							Uint8 r = x->SID_Voice3.CONTROL; //load backup
+							Uint8 s = r & 0b11111011; //clear bit
+							Uint8 t = x->SID_Voice3.WAVEFORM;
+							Uint8 u = (t << 4) + s; //restore register
+							push_event(x, 18, (Uint8)u); //write to SID
+							x->SID_Voice3.CONTROL = s; //do backup
+						}
+						break;
+					default:
+						error("SID: error! sid(ringmod): not yet a voice");
+						break;
 					}
-					break;
-				case 1:
-					if (w == 1) {
-						Uint8 r = x->SID_Voice2.CONTROL; //load backup
-						Uint8 s = r | 0b00000100; //set Bit
-						Uint8 t = x->SID_Voice2.WAVEFORM;
-						Uint8 u = (t << 4) + s; //restore register
-						push_event(x, 11, (Uint8)u); //write to SID
-						x->SID_Voice2.CONTROL = s; //do backup
-					}
-					else {
-						Uint8 r = x->SID_Voice2.CONTROL; //load backup
-						Uint8 s = r & 0b11111011; //clear bit
-						Uint8 t = x->SID_Voice2.WAVEFORM;
-						Uint8 u = (t << 4) + s; //restore register
-						push_event(x, 11, (Uint8)u); //write to SID
-						x->SID_Voice2.CONTROL = s; //do backup
-					}
-					break;
-				case 2:
-					if (w == 1) {
-						Uint8 r = x->SID_Voice3.CONTROL; //load backup
-						Uint8 s = r | 0b00000100; //set Bit
-						Uint8 t = x->SID_Voice3.WAVEFORM;
-						Uint8 u = (t << 4) + s; //restore register
-						push_event(x, 18, (Uint8)u); //write to SID
-						x->SID_Voice3.CONTROL = s; //do backup
-					}
-					else {
-						Uint8 r = x->SID_Voice3.CONTROL; //load backup
-						Uint8 s = r & 0b11111011; //clear bit
-						Uint8 t = x->SID_Voice3.WAVEFORM;
-						Uint8 u = (t << 4) + s; //restore register
-						push_event(x, 18, (Uint8)u); //write to SID
-						x->SID_Voice3.CONTROL = s; //do backup
-					}
-					break;
-				default:
-					error("SID: error! sid(ringmod): not yet a voice");
-					break;
+				}
+				else {
+					error("SID: error! sid(ringmod): value out of range");
 				}
 			}
 			else {
-				error("SID: error! sid(ringmod): value out of range");
+				error("SID: error! sid(ringmod): not right parameters");
 			}
 		}
 		else {
-			error("SID: error! sid(ringmod): not right parameters");
+			error("SID: error! sid(ringmod): not 2 parameters");
 		}
 	}
 	else {
-		error("SID: error! sid(ringmod): not 2 parameters");
+		error("SID: error! sid(ringmod): i'am in raw mode");
 	}
 }
 
 void sid_sync(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 {
-	t_atom *ap;
-	ap = argv;
-	if (argc == 2) {
-		//OK there is 2 parameters
-		if ((atom_gettype(ap++) == A_LONG) && (atom_gettype(ap++) == A_LONG)) {
-			ap = argv;
-			int n = atom_getlong(ap++);
-			int w = atom_getlong(ap++);
-			if ((w >= 0) && (w <= 1)) {
-				switch (n) {
-				case 0: 
-					if (w == 1) {
-						Uint8 r = x->SID_Voice1.CONTROL; //load backup
-						Uint8 s = r | 0b00000010; //set Bit
-						Uint8 t = x->SID_Voice1.WAVEFORM;
-						Uint8 u = (t << 4) + s; //restore register
-						push_event(x, 4, (Uint8)u); //write to SID
-						x->SID_Voice1.CONTROL = s; //do backup
+	if (!x->raw_mode) {
+		t_atom *ap;
+		ap = argv;
+		if (argc == 2) {
+			//OK there is 2 parameters
+			if ((atom_gettype(ap++) == A_LONG) && (atom_gettype(ap++) == A_LONG)) {
+				ap = argv;
+				int n = atom_getlong(ap++);
+				int w = atom_getlong(ap++);
+				if ((w >= 0) && (w <= 1)) {
+					switch (n) {
+					case 0:
+						if (w == 1) {
+							Uint8 r = x->SID_Voice1.CONTROL; //load backup
+							Uint8 s = r | 0b00000010; //set Bit
+							Uint8 t = x->SID_Voice1.WAVEFORM;
+							Uint8 u = (t << 4) + s; //restore register
+							push_event(x, 4, (Uint8)u); //write to SID
+							x->SID_Voice1.CONTROL = s; //do backup
+						}
+						else {
+							Uint8 r = x->SID_Voice1.CONTROL; //load backup
+							Uint8 s = r & 0b11111101; //clear bit
+							Uint8 t = x->SID_Voice1.WAVEFORM;
+							Uint8 u = (t << 4) + s; //restore register
+							push_event(x, 4, (Uint8)u); //write to SID
+							x->SID_Voice1.CONTROL = s; //do backup
+						}
+						break;
+					case 1:
+						if (w == 1) {
+							Uint8 r = x->SID_Voice2.CONTROL; //load backup
+							Uint8 s = r | 0b00000010; //set Bit
+							Uint8 t = x->SID_Voice2.WAVEFORM;
+							Uint8 u = (t << 4) + s; //restore register
+							push_event(x, 11, (Uint8)u); //write to SID
+							x->SID_Voice2.CONTROL = s; //do backup
+						}
+						else {
+							Uint8 r = x->SID_Voice2.CONTROL; //load backup
+							Uint8 s = r & 0b11111101; //clear bit
+							Uint8 t = x->SID_Voice2.WAVEFORM;
+							Uint8 u = (t << 4) + s; //restore register
+							push_event(x, 11, (Uint8)u); //write to SID
+							x->SID_Voice2.CONTROL = s; //do backup
+						}
+						break;
+					case 2:
+						if (w == 1) {
+							Uint8 r = x->SID_Voice3.CONTROL; //load backup
+							Uint8 s = r | 0b00000010; //set Bit
+							Uint8 t = x->SID_Voice3.WAVEFORM;
+							Uint8 u = (t << 4) + s; //restore register
+							push_event(x, 18, (Uint8)u); //write to SID
+							x->SID_Voice3.CONTROL = s; //do backup
+						}
+						else {
+							Uint8 r = x->SID_Voice3.CONTROL; //load backup
+							Uint8 s = r & 0b11111101; //clear bit
+							Uint8 t = x->SID_Voice3.WAVEFORM;
+							Uint8 u = (t << 4) + s; //restore register
+							push_event(x, 18, (Uint8)u); //write to SID
+							x->SID_Voice3.CONTROL = s; //do backup
+						}
+						break;
 					}
-					else {
-						Uint8 r = x->SID_Voice1.CONTROL; //load backup
-						Uint8 s = r & 0b11111101; //clear bit
-						Uint8 t = x->SID_Voice1.WAVEFORM;
-						Uint8 u = (t << 4) + s; //restore register
-						push_event(x, 4, (Uint8)u); //write to SID
-						x->SID_Voice1.CONTROL = s; //do backup
-					}
-					break;
-				case 1:
-					if (w == 1) {
-						Uint8 r = x->SID_Voice2.CONTROL; //load backup
-						Uint8 s = r | 0b00000010; //set Bit
-						Uint8 t = x->SID_Voice2.WAVEFORM;
-						Uint8 u = (t << 4) + s; //restore register
-						push_event(x, 11, (Uint8)u); //write to SID
-						x->SID_Voice2.CONTROL = s; //do backup
-					}
-					else {
-						Uint8 r = x->SID_Voice2.CONTROL; //load backup
-						Uint8 s = r & 0b11111101; //clear bit
-						Uint8 t = x->SID_Voice2.WAVEFORM;
-						Uint8 u = (t << 4) + s; //restore register
-						push_event(x, 11, (Uint8)u); //write to SID
-						x->SID_Voice2.CONTROL = s; //do backup
-					}
-					break;
-				case 2:
-					if (w == 1) {
-						Uint8 r = x->SID_Voice3.CONTROL; //load backup
-						Uint8 s = r | 0b00000010; //set Bit
-						Uint8 t = x->SID_Voice3.WAVEFORM;
-						Uint8 u = (t << 4) + s; //restore register
-						push_event(x, 18, (Uint8)u); //write to SID
-						x->SID_Voice3.CONTROL = s; //do backup
-					}
-					else {
-						Uint8 r = x->SID_Voice3.CONTROL; //load backup
-						Uint8 s = r & 0b11111101; //clear bit
-						Uint8 t = x->SID_Voice3.WAVEFORM;
-						Uint8 u = (t << 4) + s; //restore register
-						push_event(x, 18, (Uint8)u); //write to SID
-						x->SID_Voice3.CONTROL = s; //do backup
-					}
-					break;
+				}
+				else {
+					error("SID: error! sid(sync): value out of range");
 				}
 			}
 			else {
-				error("SID: error! sid(sync): value out of range");
+				error("SID: error! sid(sync): not right parameters");
 			}
 		}
 		else {
-			error("SID: error! sid(sync): not right parameters");
+			error("SID: error! sid(sync): not 2 parameters");
 		}
 	}
 	else {
-		error("SID: error! sid(sync): not 2 parameters");
+		error("SID: error! sid(sync): i'am in raw mode");
 	}
 }
 
 void sid_test(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 {
-	t_atom *ap;
-	ap = argv;
-	if (argc == 2) {
-		//OK there is 2 parameters
-		if ((atom_gettype(ap++) == A_LONG) && (atom_gettype(ap++) == A_LONG)) {
-			ap = argv;
-			int n = atom_getlong(ap++);
-			int w = atom_getlong(ap++);
-			if ((w >= 0) && (w <= 1)) {
-				switch (n) {
-				case 0:
-					if (w == 1) {
-						Uint8 r = x->SID_Voice1.CONTROL; //load backup
-						Uint8 s = r | 0b00001000; //set Bit
-						Uint8 t = x->SID_Voice1.WAVEFORM;
-						Uint8 u = (t << 4) + s; //restore register
-						push_event(x, 4, (Uint8)u); //write to SID
-						x->SID_Voice1.CONTROL = s; //do backup
-					}
-					else {
-						Uint8 r = x->SID_Voice1.CONTROL; //load backup
-						Uint8 s = r & 0b11110111; //clear bit
-						Uint8 t = x->SID_Voice1.WAVEFORM;
-						Uint8 u = (t << 4) + s; //restore register
-						push_event(x, 4, (Uint8)u); //write to SID
-						x->SID_Voice1.CONTROL = s; //do backup
+	if (!x->raw_mode) {
+		t_atom *ap;
+		ap = argv;
+		if (argc == 2) {
+			//OK there is 2 parameters
+			if ((atom_gettype(ap++) == A_LONG) && (atom_gettype(ap++) == A_LONG)) {
+				ap = argv;
+				int n = atom_getlong(ap++);
+				int w = atom_getlong(ap++);
+				if ((w >= 0) && (w <= 1)) {
+					switch (n) {
+					case 0:
+						if (w == 1) {
+							Uint8 r = x->SID_Voice1.CONTROL; //load backup
+							Uint8 s = r | 0b00001000; //set Bit
+							Uint8 t = x->SID_Voice1.WAVEFORM;
+							Uint8 u = (t << 4) + s; //restore register
+							push_event(x, 4, (Uint8)u); //write to SID
+							x->SID_Voice1.CONTROL = s; //do backup
+						}
+						else {
+							Uint8 r = x->SID_Voice1.CONTROL; //load backup
+							Uint8 s = r & 0b11110111; //clear bit
+							Uint8 t = x->SID_Voice1.WAVEFORM;
+							Uint8 u = (t << 4) + s; //restore register
+							push_event(x, 4, (Uint8)u); //write to SID
+							x->SID_Voice1.CONTROL = s; //do backup
 
+						}
+						break;
+					case 1:
+						if (w == 1) {
+							Uint8 r = x->SID_Voice2.CONTROL; //load backup
+							Uint8 s = r | 0b00001000; //set Bit
+							Uint8 t = x->SID_Voice2.WAVEFORM;
+							Uint8 u = (t << 4) + s; //restore register
+							push_event(x, 11, (Uint8)u); //write to SID
+							x->SID_Voice2.CONTROL = s; //do backup
+						}
+						else {
+							Uint8 r = x->SID_Voice2.CONTROL; //load backup
+							Uint8 s = r & 0b11110111; //clear bit
+							Uint8 t = x->SID_Voice2.WAVEFORM;
+							Uint8 u = (t << 4) + s; //restore register
+							push_event(x, 11, (Uint8)u); //write to SID
+							x->SID_Voice2.CONTROL = s; //do backup
+						}
+						break;
+					case 2:
+						if (w == 1) {
+							Uint8 r = x->SID_Voice3.CONTROL; //load backup
+							Uint8 s = r | 0b00001000; //set Bit
+							Uint8 t = x->SID_Voice3.WAVEFORM;
+							Uint8 u = (t << 4) + s; //restore register
+							push_event(x, 18, (Uint8)u); //write to SID
+							x->SID_Voice3.CONTROL = s; //do backup
+						}
+						else {
+							Uint8 r = x->SID_Voice3.CONTROL; //load backup
+							Uint8 s = r & 0b11110111; //clear bit
+							Uint8 t = x->SID_Voice3.WAVEFORM;
+							Uint8 u = (t << 4) + s; //restore register
+							push_event(x, 18, (Uint8)u); //write to SID
+							x->SID_Voice3.CONTROL = s; //do backup
+						}
+						break;
 					}
-					break;
-				case 1:
-					if (w == 1) {
-						Uint8 r = x->SID_Voice2.CONTROL; //load backup
-						Uint8 s = r | 0b00001000; //set Bit
-						Uint8 t = x->SID_Voice2.WAVEFORM;
-						Uint8 u = (t << 4) + s; //restore register
-						push_event(x, 11, (Uint8)u); //write to SID
-						x->SID_Voice2.CONTROL = s; //do backup
-					}
-					else {
-						Uint8 r = x->SID_Voice2.CONTROL; //load backup
-						Uint8 s = r & 0b11110111; //clear bit
-						Uint8 t = x->SID_Voice2.WAVEFORM;
-						Uint8 u = (t << 4) + s; //restore register
-						push_event(x, 11, (Uint8)u); //write to SID
-						x->SID_Voice2.CONTROL = s; //do backup
-					}
-					break;
-				case 2:
-					if (w == 1) {
-						Uint8 r = x->SID_Voice3.CONTROL; //load backup
-						Uint8 s = r | 0b00001000; //set Bit
-						Uint8 t = x->SID_Voice3.WAVEFORM;
-						Uint8 u = (t << 4) + s; //restore register
-						push_event(x, 18, (Uint8)u); //write to SID
-						x->SID_Voice3.CONTROL = s; //do backup
-					}
-					else {
-						Uint8 r = x->SID_Voice3.CONTROL; //load backup
-						Uint8 s = r & 0b11110111; //clear bit
-						Uint8 t = x->SID_Voice3.WAVEFORM;
-						Uint8 u = (t << 4) + s; //restore register
-						push_event(x, 18, (Uint8)u); //write to SID
-						x->SID_Voice3.CONTROL = s; //do backup
-					}
-					break;
+				}
+				else {
+					error("SID: error! sid(test): value out of range");
 				}
 			}
 			else {
-				error("SID: error! sid(test): value out of range");
+				error("SID: error! sid(test): not right parameters");
 			}
 		}
 		else {
-			error("SID: error! sid(test): not right parameters");
+			error("SID: error! sid(test): not 2 parameters");
 		}
 	}
 	else {
-		error("SID: error! sid(test): not 2 parameters");
+		error("SID: error! sid(test): i'am in raw mode");
 	}
 }
 
 void sid_play(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 {
-	t_atom *ap;
-	ap = argv;
-	if (argc == 1) {
-		//OK there is 1 parameter
-		if (atom_gettype(ap++) == A_LONG) {
-			ap = argv;
-			int n = atom_getlong(ap++);
-			Uint8 w, c = 0;
-			switch (n) {
+	if (!x->raw_mode) {
+		t_atom *ap;
+		ap = argv;
+		if (argc == 1) {
+			//OK there is 1 parameter
+			if (atom_gettype(ap++) == A_LONG) {
+				ap = argv;
+				int n = atom_getlong(ap++);
+				Uint8 w, c = 0;
+				switch (n) {
 				case 0:
 					w = x->SID_Voice1.WAVEFORM;	// Get Waveform-Nible
 					c = x->SID_Voice1.CONTROL;
 					c = c | 0b00000001;
-					push_event(x, 4, (Uint8)((w << 4)+(c)));
+					push_event(x, 4, (Uint8)((w << 4) + (c)));
 					x->SID_Voice1.CONTROL = c;
 					break;
-				case 1: 
+				case 1:
 					w = x->SID_Voice2.WAVEFORM;	// Get Waveform-Nible
 					c = x->SID_Voice2.CONTROL;
 					c = c | 0b00000001;
@@ -901,28 +987,33 @@ void sid_play(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 					error("SID: error! sid(play): not yet a voice");
 					break;
 				}
+				}
+			}
+			else {
+				error("SID: error! sid(play): wrong parameter(s)");
 			}
 		}
 		else {
-			error("SID: error! sid(play): wrong parameter(s)");
+			error("SID: error! sid(play): not 1 parameter");
 		}
 	}
 	else {
-		error("SID: error! sid(play): not 1 parameter");
+		error("SID: error! sid(play): i'am in raw mode");
 	}
 }
 
 void sid_stop(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 {
-	t_atom *ap;
-	ap = argv;
-	if (argc == 1) {
-		//OK there is 1 parameter
-		if (atom_gettype(ap++) == A_LONG) {
-			ap = argv;
-			int n = atom_getlong(ap++);
-			Uint8 w, c = 0;
-			switch (n) {
+	if (!x->raw_mode) {
+		t_atom *ap;
+		ap = argv;
+		if (argc == 1) {
+			//OK there is 1 parameter
+			if (atom_gettype(ap++) == A_LONG) {
+				ap = argv;
+				int n = atom_getlong(ap++);
+				Uint8 w, c = 0;
+				switch (n) {
 				case 0:
 					w = x->SID_Voice1.WAVEFORM;	// Get Waveform-Nible
 					c = x->SID_Voice1.CONTROL;
@@ -930,7 +1021,7 @@ void sid_stop(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 					push_event(x, 4, (Uint8)((w << 4) + (c)));
 					x->SID_Voice1.CONTROL = c;
 					break;
-				case 1: 
+				case 1:
 					w = x->SID_Voice2.WAVEFORM;	// Get Waveform-Nible
 					c = x->SID_Voice2.CONTROL;
 					c = c & 0b11111110;
@@ -947,14 +1038,18 @@ void sid_stop(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 				default:
 					error("SID: error! sid(stop): not yet a voice");
 					break;
+				}
+			}
+			else {
+				error("SID: error! sid(stop): wrong parameter(s)");
 			}
 		}
 		else {
-			error("SID: error! sid(stop): wrong parameter(s)");
+			error("SID: error! sid(stop): not 1 parameter");
 		}
 	}
 	else {
-		error("SID: error! sid(stop): not 1 parameter");
+		error("SID: error! sid(stop): i'am in raw mode");
 	}
 }
 
@@ -965,6 +1060,7 @@ void sid_anything(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 
 void sid_freq1(t_sid *x, long n)
 {
+	if (!x->raw_mode) {
 		//OK: n is a real frequency
 		//Calculate SID-frequency
 		float SF = (17.02841924 * (float)n);
@@ -982,11 +1078,16 @@ void sid_freq1(t_sid *x, long n)
 		}
 		else {
 			error("SID: error! (freq1): value out of range");
-		}	
+		}
+	}
+	else {
+		error("SID: error! sid(freq1): i'am in raw mode");
+	}
 }
 
 void sid_freq2(t_sid *x, long n)
 {
+	if (!x->raw_mode) {
 		//OK: n is a real frequency
 		//Calculate SID-frequency
 		float SF = (17.02841924 * (float)n);
@@ -1006,10 +1107,15 @@ void sid_freq2(t_sid *x, long n)
 			error("SID: error! (freq2): value out of range");
 
 		}
+	}
+	else {
+		error("SID: error! sid(freq2): i'am in raw mode");
+	}
 }
 
 void sid_freq3(t_sid *x, long n)
 {
+	if (!x->raw_mode) {
 		//OK: n is a real frequency
 		//Calculate SID-frequency
 		float SF = (17.02841924 * (float)n);
@@ -1026,110 +1132,135 @@ void sid_freq3(t_sid *x, long n)
 			x->SID_Voice3.FREQ_HI = SF_HI;
 		}
 		else {
-				error("SID: error! (freq3): value out of range");
+			error("SID: error! (freq3): value out of range");
 		}
+	}
+	else {
+		error("SID: error! sid(freq3): i'am in raw mode");
+	}
 }
 
 void sid_filter_freq(t_sid *x, long n)
 {
-	if ((n >= 0) && (n <= 2047)) {
-		//OK: n is a real frequency
-		Uint16 m = (Uint16)n;
-		Uint16 LO = m & 0b0000000000000111;
-		Uint16 HI = m >> 3;
-		//set filterfrequency
-		push_event(x, 21, (Uint8)LO);
-		push_event(x, 22, (Uint8)HI);
-		x->SID_Voice1.FIL_FREQ_LOW = LO;
-		x->SID_Voice1.FIL_FREQ_HIGH = HI;
+	if (!x->raw_mode) {
+		if ((n >= 0) && (n <= 2047)) {
+			//OK: n is a real frequency
+			Uint16 m = (Uint16)n;
+			Uint16 LO = m & 0b0000000000000111;
+			Uint16 HI = m >> 3;
+			//set filterfrequency
+			push_event(x, 21, (Uint8)LO);
+			push_event(x, 22, (Uint8)HI);
+			x->SID_Voice1.FIL_FREQ_LOW = LO;
+			x->SID_Voice1.FIL_FREQ_HIGH = HI;
+		}
+		else {
+			error("SID: error! sid(freq): value out of range");
+		}
 	}
 	else {
-		error("SID: error! sid(freq): value out of range");
+		error("SID: error! sid(freq): i'am in raw mode");
 	}
 }
 
 void sid_filter_res(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 {
-	t_atom *ap;
-	ap = argv;
-	if (argc == 1) {
-		//OK there is 1 parameter
-		if (atom_gettype(ap++) == A_LONG) {
-			ap = argv;
-			Uint8 n = atom_getlong(ap++);
-			//n is res 0-15
-			if ((n >= 0) && (n <= 15)) {
-				Uint8 m = (Uint8)n;
-				Uint8 o = x->SID_Voice1.FILT;
-				Uint8 p = (Uint8)((m << 4) + o);
-				push_event(x, 23, (Uint8)p);
-				x->SID_Voice1.RES = (Uint8)n;
+	if (!x->raw_mode) {
+		t_atom *ap;
+		ap = argv;
+		if (argc == 1) {
+			//OK there is 1 parameter
+			if (atom_gettype(ap++) == A_LONG) {
+				ap = argv;
+				Uint8 n = atom_getlong(ap++);
+				//n is res 0-15
+				if ((n >= 0) && (n <= 15)) {
+					Uint8 m = (Uint8)n;
+					Uint8 o = x->SID_Voice1.FILT;
+					Uint8 p = (Uint8)((m << 4) + o);
+					push_event(x, 23, (Uint8)p);
+					x->SID_Voice1.RES = (Uint8)n;
+				}
+				else {
+					error("SID: error! sid(res): value out of range");
+				}
 			}
-			else {
-				error("SID: error! sid(res): value out of range");
-			}
+		}
+		else {
+			error("SID: error! sid(res): not 1 parameter");
 		}
 	}
 	else {
-		error("SID: error! sid(res): not 1 parameter!");
+		error("SID: error! sid(res): i'am in raw mode");
 	}
 }
 
 void sid_filter_filt(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 {
-	t_atom *ap;
-	ap = argv;
-	if (argc == 1) {
-		//OK there is 1 parameters
-		if ((atom_gettype(ap++) == A_LONG)) {
-			ap = argv;
-			Uint8 n = atom_getlong(ap++);
-			if (n >= 0 && n <= 15) {
+	if (!x->raw_mode) {
+		t_atom *ap;
+		ap = argv;
+		if (argc == 1) {
+			//OK there is 1 parameters
+			if ((atom_gettype(ap++) == A_LONG)) {
+				ap = argv;
+				Uint8 n = atom_getlong(ap++);
+				if (n >= 0 && n <= 15) {
 					Uint8 m = x->SID_Voice1.RES;	// Get res-Nible
 					push_event(x, 23, (Uint8)(n + (m << 4)));
 					x->SID_Voice1.FILT = n;		//Store filt
+				}
+				else {
+					error("SID: error! sid(filt): value out of range");
+				}
 			}
 			else {
-				error("SID: error! sid(filt): value out of range");
+				error("SID: error! sid(filt): not right parameters");
 			}
 		}
 		else {
-			error("SID: error! sid(filt): not right parameters");
+			error("SID: error! sid(filt): not 1 parameter");
 		}
 	}
 	else {
-		error("SID: error! sid(filt): not 1 parameter");
+		error("SID: error! sid(filt): i'am in raw mode");
 	}
+
 }
 
 void sid_filter_mode(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 {
-	t_atom *ap;
-	ap = argv;
-	if (argc == 1) {
-		//OK there is 1 parameters
-		if ((atom_gettype(ap++) == A_LONG)) {
-			ap = argv;
-			Uint8 n = atom_getlong(ap++);
-			if (n >= 0 && n <= 15) {
-				Uint8 m = x->SID_Voice1.VOLUME;	// Get vol-Nible
-				push_event(x, 24, (Uint8)((n << 4) + m));
-				x->SID_Voice1.FILTER = n;		//Store filt
+	if (!x->raw_mode) {
+		t_atom *ap;
+		ap = argv;
+		if (argc == 1) {
+			//OK there is 1 parameters
+			if ((atom_gettype(ap++) == A_LONG)) {
+				ap = argv;
+				Uint8 n = atom_getlong(ap++);
+				if (n >= 0 && n <= 15) {
+					Uint8 m = x->SID_Voice1.VOLUME;	// Get vol-Nible
+					push_event(x, 24, (Uint8)((n << 4) + m));
+					x->SID_Voice1.FILTER = n;		//Store filt
+				}
+				else {
+					error("SID: error! sid(mode): value out of range");
+				}
 			}
 			else {
-				error("SID: error! sid(mode): value out of range");
+				error("SID: error! sid(mode): not right parameters");
 			}
 		}
 		else {
-			error("SID: error! sid(mode): not right parameters");
+			error("SID: error! sid(mode): not 1 parameter");
 		}
 	}
 	else {
-		error("SID: error! sid(mode): not 1 parameter!");
+		error("SID: error! sid(mode): i'am in raw mode");
 	}
 }
 
-//////////////////////////////////////////////////////////////////////////////////
+// circular buffer
 
 int cb_init(t_sid *x, circular_buffer *cb, size_t capacity, size_t sz)
 {
