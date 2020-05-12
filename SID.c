@@ -2,7 +2,7 @@
 	@file
 	SID.c - a Max-Extention for SIDBlaster-USB
 	by Andreas Schumm (gh0stless) for www.crazy-midi.de
-	v.0.9.0 2020-05-11
+	v.0.9.0 2020-05-12
 */
 
 #include "ext.h"			// you must include this - it contains the external object's link to available Max functions
@@ -252,7 +252,7 @@ void sid_init(t_sid *x) {
 	push_event(x, 0, 0x00);
 	systhread_sleep(300);
 	BYTE r;
-	for (r = 0; r <= NUMSIDREGS; r++) {
+	for (r = 0; r <= (NUMSIDREGS-1); r++) {
 		push_event(x, r, 0x00);
 	}
 
@@ -310,6 +310,8 @@ void sid_init(t_sid *x) {
 	x->SID_Voice3.FIL_FREQ_HIGH = 0;
 	x->SID_Voice3.FILT = 0;
 	x->SID_Voice3.RES = 0;
+
+	outlet_bang(x->x_outlet5);
 }
 
 void sid_read(t_sid *x, t_symbol *s, long argc, t_atom *argv) {
@@ -321,7 +323,7 @@ void sid_read(t_sid *x, t_symbol *s, long argc, t_atom *argv) {
 			if (atom_gettype(ap++) == A_LONG) {
 				ap = argv;
 				Uint8 n = atom_getlong(ap++);
-				if ((n >= (NUMSIDREGS + 1)) && (n <= (NUMSIDREGS + 4))) {
+				if ((n >= NUMSIDREGS) && (n <= (NUMSIDREGS + 3))) {
 					int m = 0;
 					m = get_event(x, n);
 					//post("SID: debug: I read: %ld from %ld", m, n);
@@ -364,7 +366,7 @@ void sid_readraw(t_sid *x, t_symbol *s, long argc, t_atom *argv) {
 		if (atom_gettype(ap++) == A_LONG) {
 			ap = argv;
 			Uint8 n = atom_getlong(ap++);
-			if ((n >= (NUMSIDREGS+1)) && (n <= (NUMSIDREGS+4))) {
+			if ((n >= NUMSIDREGS) && (n <= (NUMSIDREGS+3))) {
 				if (!x->raw_mode) {
 					x->raw_mode = true;
 					post("SID: info: (readraw) raw mode is on now, only reset can cancel raw mode now");
@@ -464,7 +466,7 @@ void sid_assist(t_sid *x, void *b, long m, long a, char *s) // 4 final arguments
 	if (m == ASSIST_OUTLET)
 		switch (a) {
 		case 0:
-			sprintf(s, "bang, not used yet");
+			sprintf(s, "bang, if successful init and reset");
 			break;
 		case 1:
 			sprintf(s, "result reading register 25");
@@ -561,7 +563,7 @@ void sid_ADSR(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 						break;
 
 					default:
-						error("SID: error! sid(ADSR): not yet a voice");
+						error("SID: error! sid(ADSR): not a valid voice");
 						break;
 					}
 				}
@@ -613,7 +615,7 @@ void sid_waveform(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 						x->SID_Voice3.WAVEFORM = w;		//Store Waveform
 						break;
 					default:
-						error("SID: error! sid(waveform): not yet a voice");
+						error("SID: error! sid(waveform): not a valid voice");
 						break;
 					}
 				}
@@ -666,7 +668,7 @@ void sid_pulse(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 						x->SID_Voice3.PULSE = w;		//Store Pulse
 						break;
 					default:
-						error("SID: error! sid(pulse): not yet a voice");
+						error("SID: error! sid(pulse): not a valid voice");
 						break;
 					}
 				}
@@ -756,7 +758,7 @@ void sid_ringmod(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 						}
 						break;
 					default:
-						error("SID: error! sid(ringmod): not yet a voice");
+						error("SID: error! sid(ringmod): not a valid voice");
 						break;
 					}
 				}
@@ -843,6 +845,9 @@ void sid_sync(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 							push_event(x, 18, (Uint8)u); //write to SID
 							x->SID_Voice3.CONTROL = s; //do backup
 						}
+						break;
+					default:
+						error("SID: error! sid(sync): not a valid voice");
 						break;
 					}
 				}
@@ -931,6 +936,9 @@ void sid_test(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 							x->SID_Voice3.CONTROL = s; //do backup
 						}
 						break;
+					default:
+						error("SID: error! sid(test): not a valid voice");
+						break;
 					}
 				}
 				else {
@@ -984,7 +992,7 @@ void sid_play(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 					x->SID_Voice3.CONTROL = c;
 					break;
 				default: {
-					error("SID: error! sid(play): not yet a voice");
+					error("SID: error! sid(play): not a valid voice");
 					break;
 				}
 				}
@@ -1036,7 +1044,7 @@ void sid_stop(t_sid *x, t_symbol *s, long argc, t_atom *argv)
 					x->SID_Voice3.CONTROL = c;
 					break;
 				default:
-					error("SID: error! sid(stop): not yet a voice");
+					error("SID: error! sid(stop): not a valid voice");
 					break;
 				}
 			}

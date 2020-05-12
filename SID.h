@@ -4,7 +4,7 @@ typedef unsigned char	Uint8;
 typedef unsigned short	Uint16;
 typedef unsigned char	boolean;
 
-#define NUMSIDREGS 0x18 // numbers of (writable) SID-registers
+#define NUMSIDREGS 0x19 // numbers of (writable) SID-registers
 #define SIDWRITEDELAY 14 // lda $xxxx,x 4 cycles, sta $d400,x 5 cycles, dex 2 cycles, bpl 3 cycles
 #define HARDSID_FLUSH_CYCLES 1000
 #define HARDSID_FLUSH_MS 50
@@ -149,7 +149,6 @@ void sid_thread_stop(t_sid *x);
 void *sid_threadproc(t_sid *x);
 
 // circular buffer
-
 int cb_init(t_sid *x, circular_buffer *cb, size_t capacity, size_t sz);
 int cb_empty(t_sid *x, circular_buffer *cb);
 void cb_free(t_sid *x, circular_buffer *cb);
