@@ -1,5 +1,7 @@
 # sid
-### controls a SIDBlaster-USB
+### controls one ore more SIDBlaster-USB
+
+The object can be used as many times as physical sidblasters are connected. Thanks to instance management, deletion and reinsertion is also possible.
 
 #### inlets
 - inlet1: messages
