@@ -43,7 +43,7 @@ The object can be used as many times as physical sidblasters are connected. Than
 - ###### read *reg (25-28)*
   * read from a register (experimental)
 ----------------------------------------------------
-#####Raw Mode
+##### Raw Mode
 - ###### readraw *reg(25-28)*
   * like read, just in raw mode
 - ###### writeraw *reg(0-24) value(0-255)*
