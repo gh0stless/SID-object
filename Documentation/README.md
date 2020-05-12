@@ -27,7 +27,7 @@
 - ###### fmode *filtermode(0-15)*
   * sets filtermode as bits in a nibble
 - ###### waveform *voice(0-2) waveform(0-15)*
-  * sets waveform as bist in a nibble
+  * sets waveform as bits in a nibble
 - ###### pulse *pulswidth (0-4094)*
   * sets pulswith
 - ###### ringmod *voice(0-2) off/on(0-1)*
