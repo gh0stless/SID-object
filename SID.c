@@ -2,7 +2,7 @@
 	@file
 	SID.c - a Max-Extention for SIDBlaster-USB
 	by Andreas Schumm (gh0stless) for www.crazy-midi.de
-	v.0.9.5 2020-07-07
+	v.0.9.2 2020-07-08
 */
 
 #include "ext.h"			// you must include this - it contains the external object's link to available Max functions
@@ -11,7 +11,7 @@
 #include <stddef.h>
 #include "SID.h"
 
-const char* version = "v.0.9.5";
+const char* version = "v.0.9.2";
 int Number_Of_Instances = 0;
 int Number_Of_Devices = 0;
 int DLL_Version = 0;
