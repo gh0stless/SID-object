@@ -2,7 +2,7 @@
 	@file
 	SID.c - a Max-Extention for SIDBlaster-USB
 	by Andreas Schumm (gh0stless) for www.crazy-midi.de
-	v.0.9.0 2020-05-12
+	v.0.9.5 2020-07-07
 */
 
 #include "ext.h"			// you must include this - it contains the external object's link to available Max functions
@@ -11,8 +11,10 @@
 #include <stddef.h>
 #include "SID.h"
 
-int Nr_Of_Instances = 0;
+const char* version = "v.0.9.5";
+int Number_Of_Instances = 0;
 int Number_Of_Devices = 0;
+int DLL_Version = 0;
 HINSTANCE hardsiddll = 0;
 bool dll_initialized = FALSE;
 bool InUse[8] = { false, false, false, false, false, false, false, false };
@@ -37,6 +39,7 @@ void ext_main(void *r)
 	class_addmethod(c, (method)sid_waveform, "waveform", A_GIMME, 0);
 	class_addmethod(c, (method)sid_pulse, "pulse", A_GIMME, 0);
 	class_addmethod(c, (method)sid_init, "init", A_GIMME, 0);
+	class_addmethod(c, (method)sid_getinfo, "getinfo", A_GIMME, 0);
 	class_addmethod(c, (method)sid_readraw, "readraw", A_GIMME, 0);
 	class_addmethod(c, (method)sid_writeraw, "writeraw", A_GIMME, 0);
 	class_addmethod(c, (method)sid_read, "read", A_GIMME, 0);
@@ -50,7 +53,7 @@ void ext_main(void *r)
 
 	//--------------------------------------------------------
 
-	post("SID: info: sid object v.0.9.0 loaded", 0);	// post any important info to the max window when our class is loaded
+	post("SID: info: sid object %s loaded", version);	// post any important info to the max window when our class is loaded
 
 	hardsiddll = LoadLibrary("hardsid.dll");
 	// Check to see if the library was loaded successfully 
@@ -78,12 +81,13 @@ void ext_main(void *r)
 		HardSID_Unlock = (lpHardSID_Unlock)GetProcAddress(hardsiddll, "HardSID_Unlock");
 		HardSID_Try_Write = (lpHardSID_Try_Write)GetProcAddress(hardsiddll, "HardSID_Try_Write");
 		HardSID_ExternalTiming = (lpHardSID_ExternalTiming)GetProcAddress(hardsiddll, "HardSID_ExternalTiming");
+		HardSID_GetSerial = (lpHardSID_GetSerial)GetProcAddress(hardsiddll, "HardSID_GetSerial");
 		
 		//check version & device count
-		int DLL_Version = (int)HardSID_Version();
+		DLL_Version = (int)HardSID_Version();
 		Number_Of_Devices = (int)HardSID_Devices();
 		post("SID: info: dll-version: %ld", (long)DLL_Version);
-		if ((DLL_Version < 512) || Number_Of_Devices>8) {
+		if ((DLL_Version < 0x0202) || Number_Of_Devices>8) {
 			dll_initialized = FALSE;
 			error("SID: fatal! wrong hardsid.dll version or more than 8 devices");
 		}
@@ -110,39 +114,41 @@ void *sid_new(long n)		// n = int argument typed into object box (A_DEFLONG) -- 
 	x->x_outlet2 = intout(x);	//register 27
 	x->x_outlet3 = intout(x);	//register 26
 	x->x_outlet4 = intout(x);	//register 25
-	x->x_outlet5 = bangout(x);	//create an bang outlet
+	x->x_outlet5 = listout(x);  //a list for info
+	x->x_outlet6 = bangout(x);	//create an bang outlet
+	
 	x->x_systhread = NULL;
 	systhread_mutex_new(&x->x_mutex, 0);
 			
 	post("SID: info: a new sid object instance added to patch",0); // post important info to the max window when new instance is created
-	Nr_Of_Instances++;
-	post("SID: info: number of instances: %ld", Nr_Of_Instances);
+	Number_Of_Instances++;
+	post("SID: info: number of instances: %ld", Number_Of_Instances);
 
-	if (Nr_Of_Instances >= 9) { //8 Sidblasters; all used
+	if (Number_Of_Instances >= 9) { //8 Sidblasters; all used
 		error("SID: fatal! all 8 Sidblasters in use");
-		Nr_Of_Instances--;
-		post("SID: info: number of instances: %ld", Nr_Of_Instances);
+		Number_Of_Instances--;
+		post("SID: info: number of instances: %ld", Number_Of_Instances);
 		return(NULL);
 	}
 
 	if (!dll_initialized) {
 		error("SID: fatal! can't init hardsid.dll");
-		Nr_Of_Instances--;
-		post("SID: info: number of instances: %ld", Nr_Of_Instances);
+		Number_Of_Instances--;
+		post("SID: info: number of instances: %ld", Number_Of_Instances);
 		return(NULL);
 	}
 
 	if (Number_Of_Devices > 8) {
 		error("SID: fatal! more than 8 devices");
-		Nr_Of_Instances--;
-		post("SID: info: number of instances: %ld", Nr_Of_Instances);
+		Number_Of_Instances--;
+		post("SID: info: number of instances: %ld", Number_Of_Instances);
 		return(NULL);
 	}
 	
-	if (Nr_Of_Instances > Number_Of_Devices) {
+	if (Number_Of_Instances > Number_Of_Devices) {
 		error("SID: fatal! not enough SIDBlasters connected");
-		Nr_Of_Instances--;
-		post("SID: info: number of instances: %ld", Nr_Of_Instances);
+		Number_Of_Instances--;
+		post("SID: info: number of instances: %ld", Number_Of_Instances);
 		return(NULL);
 	}
 	
@@ -157,13 +163,14 @@ void *sid_new(long n)		// n = int argument typed into object box (A_DEFLONG) -- 
 
 	if (!(HardSID_Lock((Uint8)x->My_Device))) {
 		error("SID: fatal! can't lock device");
-		Nr_Of_Instances--;
-		post("SID: info: number of instances: %ld", Nr_Of_Instances);
+		Number_Of_Instances--;
+		post("SID: info: number of instances: %ld", Number_Of_Instances);
 		return(NULL);
 	}
 
-
-	post("SID: info: using device No.: %ld", x->My_Device);
+	char serial[9];
+	HardSID_GetSerial((Uint8)x->My_Device, serial);
+	post("SID: info: using device No.: %ld with serial: %s", x->My_Device, serial);
 	
 	if (cb_init(x, &x->my_cb, MY_BUFFER_SIZE, sizeof(write_event))) {
 		error("SID: fatal! CB: can't alloc mem");
@@ -190,8 +197,8 @@ void sid_free(t_sid *x)
 		systhread_mutex_free(x->x_mutex);
 	// free ringbuffer
 	cb_free(x, &x->my_cb);
-	Nr_Of_Instances--;
-	post("SID: info: number of instances: %ld", Nr_Of_Instances);
+	Number_Of_Instances--;
+	post("SID: info: number of instances: %ld", Number_Of_Instances);
 	InUse[x->My_Device] = false;
 	HardSID_Unlock((Uint8)x->My_Device);
 }
@@ -311,7 +318,20 @@ void sid_init(t_sid *x) {
 	x->SID_Voice3.FILT = 0;
 	x->SID_Voice3.RES = 0;
 
-	outlet_bang(x->x_outlet5);
+	outlet_bang(x->x_outlet6);
+}
+
+void sid_getinfo(t_sid *x) {
+	char serialnumber[9];
+	HardSID_GetSerial(x->My_Device, serialnumber);
+	t_atom myList[6];
+	atom_setlong	(myList,   (long)Number_Of_Devices);
+	atom_setlong	(myList+1, (long)Number_Of_Instances);
+	atom_setlong    (myList+2, (long)x->My_Device);
+	atom_setsym		(myList+3, gensym(&serialnumber));
+	atom_setlong	(myList+4, (long)DLL_Version);
+	atom_setsym		(myList+5, gensym(version));
+	outlet_list(x->x_outlet5, 0L, 6, &myList);
 }
 
 void sid_read(t_sid *x, t_symbol *s, long argc, t_atom *argv) {
@@ -374,7 +394,6 @@ void sid_readraw(t_sid *x, t_symbol *s, long argc, t_atom *argv) {
 				int m = 0;
 				m = get_event(x, n);
 				//post("SID: debug: I read : %ld from %ld in raw mode",m,n);
-				//outlet_bang(x->x_outlet5); //reserved
 				switch (n)
 				{
 				case 25: { outlet_int(x->x_outlet4, m);
@@ -418,7 +437,6 @@ void sid_writeraw(t_sid *x, t_symbol *s, long argc, t_atom *argv) {
 							post("SID: info: (writeraw) raw mode is on now, only reset can cancel raw mode now");
 						}
 						push_event(x,(Uint8)n, w);
-						//outlet_bang(x->x_outlet5); //reserved
 					}
 					else {
 						error("SID: error! sid(writeraw): not a valid value");
@@ -454,8 +472,7 @@ int get_event(t_sid *x, Uint8 reg) {
 
 	Uint8 val = 0;
 	systhread_mutex_lock(x->x_mutex);
-	//val = HardSID_Read(x->My_Device, 0, reg);
-	val = ReadFromHardSID(x->My_Device, reg);
+	val = HardSID_Read(x->My_Device, 0, reg);
 	systhread_mutex_unlock(x->x_mutex);
 	//post("I got %ld from %ld", (long)val, (long)reg);
 	return((int)val);
@@ -466,18 +483,21 @@ void sid_assist(t_sid *x, void *b, long m, long a, char *s) // 4 final arguments
 	if (m == ASSIST_OUTLET)
 		switch (a) {
 		case 0:
-			sprintf(s, "bang, if successful init and reset");
+			sprintf(s, "a list with infos");
 			break;
 		case 1:
-			sprintf(s, "result reading register 25");
+			sprintf(s, "bang, if successful init and reset");
 			break;
 		case 2:
-			sprintf(s, "result reading register 26");
+			sprintf(s, "result reading register 25");
 			break;
 		case 3:
-			sprintf(s, "result reading register 27");
+			sprintf(s, "result reading register 26");
 			break;
 		case 4:
+			sprintf(s, "result reading register 27");
+			break;
+		case 5:
 			sprintf(s, "result reading register 28");
 			break;
 		}

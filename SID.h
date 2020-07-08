@@ -37,6 +37,7 @@ typedef void    (CALLBACK* lpHardSID_Reset2)(Uint8 DeviceID, Uint8 Volume);
 typedef void    (CALLBACK* lpHardSID_Unlock)(Uint8 DeviceID);
 typedef Uint8	(CALLBACK* lpHardSID_Try_Write)(Uint8 DeviceID, Uint16 Cycles, Uint8 SID_reg, Uint8 Data);
 typedef BOOL	(CALLBACK* lpHardSID_ExternalTiming)(Uint8 DeviceID);
+typedef void    (CALLBACK* lpHardSID_GetSerial)(Uint8 DevieID, char* output);
 
 lpHardSID_Version HardSID_Version = NULL;
 lpHardSID_Devices HardSID_Devices = NULL;
@@ -60,6 +61,7 @@ lpHardSID_Reset2 HardSID_Reset2 = NULL;
 lpHardSID_Unlock HardSID_Unlock = NULL;
 lpHardSID_Try_Write HardSID_Try_Write = NULL;
 lpHardSID_ExternalTiming HardSID_ExternalTiming = NULL;
+lpHardSID_GetSerial HardSID_GetSerial = NULL;
 
 typedef enum {
 	HSID_USB_WSTATE_OK = 1, HSID_USB_WSTATE_BUSY,
@@ -95,6 +97,7 @@ typedef struct _sid {		// defines our object's internal variables for each insta
 	void *x_outlet3;
 	void *x_outlet4;
 	void *x_outlet5;
+	void *x_outlet6;
 	struct SID_Voice {
 		Uint8 FREQ_LO;
 		Uint8 FREQ_HI;
@@ -139,6 +142,7 @@ void sid_filter_mode(t_sid *x, t_symbol *s, long argc, t_atom *argv);
 void push_event(t_sid *x, Uint8 reg, Uint8 val);
 int get_event(t_sid *x, Uint8 reg);
 void sid_init(t_sid *x);
+void sid_getinfo(t_sid *x);
 void sid_readraw(t_sid *x, t_symbol *s, long argc, t_atom *argv);
 void sid_writeraw(t_sid *x, t_symbol *s, long argc, t_atom *argv);
 void sid_read(t_sid *x, t_symbol *s, long argc, t_atom *argv);
