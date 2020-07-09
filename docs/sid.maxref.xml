@@ -8,7 +8,7 @@
 	</digest>
 	
 	<description>
-		Controls one or more SIDBlaster-USB hardware devices. SIDBlaster-USB is a real MOS 6581 or 8580 SID Chip from the Commodore C64 on a USB port of an PC.
+		Controls one or more SIDBlaster-USB hardware devices. SIDBlaster-USB is a real MOS 6581 or 8580 SID Chip from the Commodore C64 on a USB port of an PC. Windows only.
 	</description>
 	
 	<!--METADATA-->
