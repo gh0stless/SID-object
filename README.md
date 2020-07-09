@@ -11,7 +11,7 @@ Installation:
 
 - copy the appropriate DLL into the program directory of Max
 
-- study the attached Max patchs for the feature learning and reference page
+- study the attached Max patches and reference page for feature learning
 
 versions history
 ----------------
