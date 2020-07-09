@@ -44,7 +44,7 @@ Thanks to:
 
 *Stein Pedersen and Wilfred Bos for there support.
 
-##### Copyright © 2020 [www.crazy-midi.de](http://www.crazy-midi.de)
+##### Copyright © 2016-2020 [www.crazy-midi.de](http://www.crazy-midi.de)
 
 Andreas Schumm (gh0stless)
 contact: info@crazy-midi.de
