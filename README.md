@@ -7,9 +7,7 @@ This object allows full access to a real SID-Chip.
 Installation:
 -------------
 - copy SID-object folder to
- ...\documents\Max 7\packages
- or the SID.mxe64 to
- ...\documents\Max 8\packages
+ ...\documents\Max 7\packages or to ...\documents\Max 8\packages
 
 - copy the appropriate DLL into the program directory of Max
 
