@@ -1,0 +1,16 @@
+{
+    "author" : "Andreas Schumm",
+    "description" : "A control object for SIDBlaster-USB, a real SID on PC",
+    "homepatcher" : "Sidblaster-Demo.maxpat",
+    "max_version_min" : "7.1", "max_version_max" : "none",
+    "name" : "SID-Object",
+    "os" : {
+        "windows" : {
+            "platform" : [ "ia32", "x64" ],
+            "min_version" : "7"
+        }
+    },
+    "tags" : [ ],
+    "version" : "0.9.9",
+    "website" : "http://www.crazy-midi.de"
+}

@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<c74object name="sid" >
+
+	<digest>
+		Controls SIDBlaster-USB hardware
+	</digest>
+	
+	<description>
+		Controls one or more SIDBlaster-USB hardware devices. SIDBlaster-USB is a real MOS 6581 or 8580 SID Chip from the Commodore C64 on a USB port of an PC.
+	</description>
+	
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">Andreas Schumm</metadata>
+		<metadata name="tag">crazy-midi.de</metadata>
+	</metadatalist>
+	
+	<!--INLETS-->
+	<inletlist>
+		<inlet id="0" type="symbol">
+			<digest>Message</digest>
+			<description>Message Input</description>
+		</inlet>
+		<inlet id="1" type="int">
+			<digest>Input freq. 1</digest>
+			<description>Input freq. 1 0-3848(Hz)</description>
+		</inlet>
+		<inlet id="2" type="int">
+			<digest>Input freq. 2</digest>
+			<description>Input freq. 2 0-3848(Hz)</description>
+		</inlet>
+		<inlet id="3" type="int">
+			<digest>Input freq. 3</digest>
+			<description>Input freq. 3 0-3848(Hz)</description>
+		</inlet>
+		<inlet id="4" type="int">
+			<digest>Filer Freq.</digest>
+			<description>Filer freq 0-2047</description>
+		</inlet>
+	</inletlist>
+
+	<!--OUTLETS-->
+	<outletlist>
+		<outlet id="0" type="bang">
+			<digest>Reset: bangs if successfully reset</digest>
+		</outlet>
+		<outlet id="1" type="list">
+			<digest>a list with informations</digest>
+		</outlet>
+		<outlet id="2" type="int">
+			<digest>reading result register 25</digest>
+		</outlet>
+		<outlet id="3" type="int">
+			<digest>reading result register 26</digest>
+		</outlet>
+		<outlet id="4" type="int">
+			<digest>reading result register 27</digest>
+		</outlet>
+		<outlet id="5" type="int">
+			<digest>reading result register 28</digest>
+		</outlet>
+	</outletlist>
+	
+	<!--ARGUMENTS-->
+	
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="ADSR">
+			<arglist>
+				<arg name="VoiceNo." optional="0" type="int" />
+				<arg name="Attack" optional="0" type="int" />
+				<arg name="Decay" optional="0" type="int" />
+				<arg name="Sustain" optional="0" type="int" />
+				<arg name="Relase" optional="0" type="int" />
+			</arglist>
+			<digest>
+				sets the ADSR
+			</digest>
+			<description>
+				sets the values for the ADSR envelop (VoiceNo.: 0-2; Values: 0-15)
+			</description>
+		</method>
+		<method name="waveform">
+			<arglist>
+				<arg name="VoiceNo." optional="0" type="int" />
+				<arg name="Waveformnibble" optional="0" type="int" />
+				</arglist>
+			<digest>
+				sets the waveform
+			</digest>
+			<description>
+				sets the waveform as bits of a nibble (Bit1: Triangel; Bit2: Saw; Bit3: Pulse; Bit4: Noise)(VoiceNo.: 0-2; Waveformnibble: 0-15)
+			</description>
+		</method>
+		<method name="play">
+			<arglist>
+				<arg name="VoiceNo." optional="0" type="int" />
+				</arglist>
+			<digest>
+				triggers the ADSR (play) 
+			</digest>
+			<description>
+				triggers the ADSR (play) (VoiceNo.: 0-2)
+			</description>
+		</method>
+		<method name="stop">
+			<arglist>
+				<arg name="VoiceNo." optional="0" type="int" />
+				</arglist>
+			<digest>
+				triggers release (stop)
+			</digest>
+			<description>
+				triggers release (stop) (VoiceNo.: 0-2)
+			</description>
+		</method>
+		<method name="ringmod">
+			<arglist>
+				<arg name="VoiceNo." optional="0" type="int" />
+				<arg name="OnOrOff" optional="0" type="int" />
+				</arglist>
+			<digest>
+				switch ringmod on or off
+			</digest>
+			<description>
+				switch ringmod on or off (VoiceNo.: 0-2; OnOrOff: 0 or 1)
+			</description>
+		</method>
+		<method name="sync">
+			<arglist>
+				<arg name="VoiceNo." optional="0" type="int" />
+				<arg name="OnOrOff" optional="0" type="int" />
+				</arglist>
+			<digest>
+				switch sync on or off
+			</digest>
+			<description>
+				switch sync on or off (VoiceNo.: 0-2; OnOrOff: 0 or 1)
+			</description>
+		</method>
+		<method name="pulse">
+			<arglist>
+				<arg name="VoiceNo." optional="0" type="int" />
+				<arg name="Pulsewidth" optional="0" type="int" />
+				</arglist>
+			<digest>
+				sets the pulse width
+			</digest>
+			<description>
+				sets the pulse width (VoiceNo.: 0-2; Pulsewidth: 0-4094)
+			</description>
+		</method>
+		<method name="volume">
+			<arglist>
+				<arg name="Volume" optional="0" type="int" />
+				</arglist>
+			<digest>
+				sets the SID volume
+			</digest>
+			<description>
+				sets the SID volume (Volume: 0-15)
+			</description>
+		</method>
+		<method name="resonance">
+			<arglist>
+				<arg name="Resonance" optional="0" type="int" />
+				</arglist>
+			<digest>
+				sets the resonance
+			</digest>
+			<description>
+				sets resonance (Resonance: 0-15)
+			</description>
+		</method>
+		<method name="filt">
+			<arglist>
+				<arg name="Filt" optional="0" type="int" />
+				</arglist>
+			<digest>
+				sets the filter
+			</digest>
+			<description>
+				sets filter as bits in a nibble (Bit1: Voice1; Bit2: Voice2; Bit3: Voice3; Bit4: ExtIn)(Filt: 0-15)
+			</description>
+		</method>
+		<method name="fmode">
+			<arglist>
+				<arg name="Fmode" optional="0" type="int" />
+				</arglist>
+			<digest>
+				sets the filter mode
+			</digest>
+			<description>
+				sets filter mode as bits in a nibble (Bit1: Low Pass; Bit2: Band Pass; Bit3: High Pass; Bit4: 3OFF)(Fmode: 0-15)
+			</description>
+		</method>
+		<method name="read">
+			<arglist>
+				<arg name="Register" optional="0" type="int" />
+				</arglist>
+			<digest>
+				reads from given register
+			</digest>
+			<description>
+				reads from given register, result appears on corresponding outlet (Register: 25-28)
+			</description>
+		</method>
+		<method name="readraw">
+			<arglist>
+				<arg name="Register" optional="0" type="int" />
+				</arglist>
+			<digest>
+				reads from given register in raw mode
+			</digest>
+			<description>
+				reads from given register in raw mode, result appears on corresponding outlet,
+				if once in raw mode you can leave raw mode only by init(Register: 25-28)
+			</description>
+		</method>
+		<method name="writeraw">
+			<arglist>
+				<arg name="Register" optional="0" type="int" />
+				<arg name="Value" optional="0" type="int" />
+			</arglist>
+			<digest>
+				write value to a given register in raw mode
+			</digest>
+			<description>
+				write value to a given register in raw mode,
+				if once in raw mode you can leave raw mode only by init (Register: 0-24; Value: 0-255)
+			</description>
+		</method>
+		<method name="test">
+			<arglist>
+				<arg name="VoiceNo." optional="0" type="int" />
+				<arg name="OnOrOff" optional="0" type="int" />
+				</arglist>
+			<digest>
+				sets or clear the test bit
+			</digest>
+			<description>
+				sets or clear the test bit (VoiceNo.: 0-2) (OnOrOff: 0,1)
+			</description>
+		</method>
+		<method name="getinfo">
+			<arglist />
+			<digest>
+				provides a list of informations
+			</digest>
+			<description>
+				provides a list of informations:
+				1 Number of Devices
+				2 Number of Instances
+				3 MyDevice Number
+				4 Serial of MyDevice
+				5 DLL Version
+				6 SID-Object Version
+			</description>
+		</method>
+		<method name="init">
+			<arglist />
+			<digest>
+				resets the sidblaster
+			</digest>
+			<description>
+				resets and init the sidblaster
+			</description>
+		</method>
+	</methodlist>
+	
+	<!--SEEALSO-->
+	
+</c74object>

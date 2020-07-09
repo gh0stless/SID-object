@@ -1,32 +1,38 @@
 # sid-object
-![](./Documentation/The-Sid-Object.png)
+![](./misc/The-Sid-Object.png)
 #### a Max/MSP C-external for SIDBlaster-USB hardware
 
 This object allows full access to a real SID-Chip.
 
 Installation:
 -------------
-- copy SID.mxe and/or SID.mxe64 to
- ...\documents\Max 7\Library
+- copy SID-object folder to
+ ...\documents\Max 7\packages
  or the SID.mxe64 to
- ...\documents\Max 8\Library
+ ...\documents\Max 8\packages
 
 - copy the appropriate DLL into the program directory of Max
 
-- study the attached Max patch for the feature learning
+- study the attached Max patchs for the feature learning and reference page
 
 versions history
 ----------------
-v.0.9.0 2020-05-11
-- implemented the raw-mode
-- read functions
+* v.0.9.9 2020-07-09
+	- some clean up; final 1.0 release candidate
+* v.0.9.5 2020-07-08
+	- change sleeptime from 20ms to 1ms; some clean up
+* v.0.9.2 2020-07-07
+	- add getinfo
+* v.0.9.1 2020-07-04
+	- needs hardsid.dll 0x0202; fix read functions
+* v.0.9 2020-05-11
+	- implemented the raw-mode; read functions
+* v.0.8.1 2020-05-07
+	- Improvement of error messages: "Real" errors are reported to the MAX console. The messages follow a     system so that they can be parsed in MAX.
+* v.0.8 2018-10-24
+	- add instance management; lock/unlock; better threading and multitasking; better multidevice, up to 8 devices tested
+* v.0.1 started at 2016-12-06
 
-v.0.8.1 2020-05-07
-- Improvement of error messages: "Real" errors are reported to the MAX console. The messages follow a     system so that they can be parsed in MAX.
-
-v.0.8
-- better threading and multitasking
-better multidevice, up to 8 devices tested
 
 see: [https://github.com/gh0stless/AIASS-for-MAX4LIVE](https://github.com/gh0stless/AIASS-for-MAX4LIVE/) for a Synthesizer that use that object.
 
