@@ -2,7 +2,7 @@
 	@file
 	SID.c - a Max/MSP external for SIDBlaster-USB
 	© 2016-2020 by Andreas Schumm (gh0stless) for www.crazy-midi.de
-	v.0.9.9 2020-07-09
+	v.1.0 2020-07-18
 */
 
 #include "ext.h"
@@ -11,7 +11,7 @@
 #include <stddef.h>
 #include "SID.h"
 
-const char* version = "v.0.9.9";
+const char* version = "v.1.0";
 int Number_Of_Instances = 0;
 int Number_Of_Devices = 0;
 int DLL_Version = 0;
@@ -222,7 +222,7 @@ void *sid_threadproc(t_sid *x)
 			systhread_mutex_unlock(x->x_mutex);
 		}
 		else {
-			systhread_sleep(1);
+			systhread_sleep(4);
 		}
 	}
 	x->x_systhread_cancel = false;							// reset cancel flag for next time, in case
