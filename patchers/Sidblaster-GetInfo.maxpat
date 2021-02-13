@@ -4,13 +4,13 @@
 		"appversion" : 		{
 			"major" : 8,
 			"minor" : 1,
-			"revision" : 5,
+			"revision" : 8,
 			"architecture" : "x64",
 			"modernui" : 1
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ -1493.0, 451.0, 538.0, 499.0 ],
+		"rect" : [ 630.0, 372.0, 538.0, 499.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 12.0,
@@ -41,12 +41,12 @@
 		"boxes" : [ 			{
 				"box" : 				{
 					"id" : "obj-6",
-					"linecount" : 6,
+					"linecount" : 7,
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 337.0, 342.0, 150.0, 89.0 ],
-					"text" : "1 Number of Devices\n2 Number of Instances\n3 MyDevice Number\n4 Serial of MyDevice\n5 DLL Version\n6 SID-Object Version"
+					"patching_rect" : [ 313.0, 342.0, 215.0, 103.0 ],
+					"text" : "1 Number of Devices\n2 Number of Instances\n3 MyDevice Number\n4 Serial of MyDevice\n5 DLL Version\n6 SID-Object Version\n7 SIDType (0-none; 1-6581; 2-8580)"
 				}
 
 			}
@@ -58,7 +58,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 108.0, 301.0, 215.0, 22.0 ],
-					"text" : "2 1 0 A12KSI5Q 514 v.0.9.5"
+					"text" : "8 1 0 A1600001 515 v.1.0.1 2"
 				}
 
 			}
@@ -81,7 +81,7 @@
 					"numinlets" : 1,
 					"numoutlets" : 0,
 					"patching_rect" : [ 8.5, 6.5, 128.0, 20.0 ],
-					"text" : "SIDBlaster getinfo test"
+					"text" : "SIDBlaster getinfo"
 				}
 
 			}

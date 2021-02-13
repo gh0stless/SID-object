@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml version="1.0.1" encoding="utf-8" standalone="yes"?>
 <?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
 
 <c74object name="sid" >
@@ -257,6 +257,7 @@
 				4 Serial of MyDevice
 				5 DLL Version
 				6 SID-Object Version
+				7 SID Type: 0:unknown 1:6581 2:8580
 			</description>
 		</method>
 		<method name="init">

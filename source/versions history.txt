@@ -1,3 +1,6 @@
+* v.1.0.1 2021-02-13
+	- adapted for a new version of the hardsid.dll
+	- added SIDType to Info
 * v.1.0 2020-07-18
     - release
 * v.0.9.9.3 2020-07-11

@@ -37,7 +37,10 @@ typedef void    (CALLBACK* lpHardSID_Reset2)(Uint8 DeviceID, Uint8 Volume);
 typedef void    (CALLBACK* lpHardSID_Unlock)(Uint8 DeviceID);
 typedef Uint8	(CALLBACK* lpHardSID_Try_Write)(Uint8 DeviceID, Uint16 Cycles, Uint8 SID_reg, Uint8 Data);
 typedef BOOL	(CALLBACK* lpHardSID_ExternalTiming)(Uint8 DeviceID);
-typedef void    (CALLBACK* lpHardSID_GetSerial)(Uint8 DevieID, char* output);
+typedef void	(CALLBACK* lpHardSID_SetWriteBufferSize)(Uint8 bufferSize);
+typedef void	(CALLBACK* lpHardSID_GetSerial)(char* output, int buffersize, Uint8 DeviceID);
+typedef int		(CALLBACK* lpHardSID_SetSIDType)(Uint8 DeviceID, int sidtype);
+typedef int		(CALLBACK* lpHardSID_GetSIDType)(Uint8 DeviceID);
 
 lpHardSID_Version HardSID_Version = NULL;
 lpHardSID_Devices HardSID_Devices = NULL;
@@ -61,12 +64,19 @@ lpHardSID_Reset2 HardSID_Reset2 = NULL;
 lpHardSID_Unlock HardSID_Unlock = NULL;
 lpHardSID_Try_Write HardSID_Try_Write = NULL;
 lpHardSID_ExternalTiming HardSID_ExternalTiming = NULL;
+lpHardSID_SetWriteBufferSize HardSID_SetWriteBufferSize = NULL;
 lpHardSID_GetSerial HardSID_GetSerial = NULL;
+lpHardSID_SetSIDType HardSID_SetSIDType = NULL;
+lpHardSID_GetSIDType HardSID_GetSIDType = NULL;
 
 typedef enum {
 	HSID_USB_WSTATE_OK = 1, HSID_USB_WSTATE_BUSY,
 	HSID_USB_WSTATE_ERROR, HSID_USB_WSTATE_END
 } HSID_STATE;
+
+enum SID_TYPE {
+		SID_TYPE_NONE = 0, SID_TYPE_6581, SID_TYPE_8580
+	};
 
 typedef struct circular_buffer
 {

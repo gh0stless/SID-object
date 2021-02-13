@@ -1,8 +1,8 @@
 /*
 	@file
 	SID.c - a Max/MSP external for SIDBlaster-USB
-	© 2016-2020 by Andreas Schumm (gh0stless) for www.crazy-midi.de
-	v.1.0 2020-07-18
+	© 2016-2021 by Andreas Schumm (gh0stless) for www.crazy-midi.de
+	v.1.0.1 2021-02-13
 */
 
 #include "ext.h"
@@ -11,7 +11,7 @@
 #include <stddef.h>
 #include "SID.h"
 
-const char* version = "v.1.0";
+const char* version = "v.1.0.1";
 int Number_Of_Instances = 0;
 int Number_Of_Devices = 0;
 int DLL_Version = 0;
@@ -56,35 +56,38 @@ void ext_main(void *r)
 	hardsiddll = LoadLibrary("hardsid.dll");
 	if (hardsiddll != 0) {
 		post("SID: info: hardsid.dll library loaded\n");
-		HardSID_Version = (lpHardSID_Version)GetProcAddress(hardsiddll, "HardSID_Version");
-		HardSID_Devices = (lpHardSID_Devices)GetProcAddress(hardsiddll, "HardSID_Devices");
-		HardSID_Delay = (lpHardSID_Delay)GetProcAddress(hardsiddll, "HardSID_Delay");
-		HardSID_Write = (lpHardSID_Write)GetProcAddress(hardsiddll, "HardSID_Write");
-		HardSID_Read = (lpHardSID_Read)GetProcAddress(hardsiddll, "HardSID_Read");
-		HardSID_Flush = (lpHardSID_Flush)GetProcAddress(hardsiddll, "HardSID_Flush");
-		HardSID_SoftFlush = (lpHardSID_SoftFlush)GetProcAddress(hardsiddll, "HardSID_SoftFlush");
-		HardSID_Lock = (lpHardSID_Lock)GetProcAddress(hardsiddll, "HardSID_Lock");
-		HardSID_Filter = (lpHardSID_Filter)GetProcAddress(hardsiddll, "HardSID_Filter");
-		HardSID_Reset = (lpHardSID_Reset)GetProcAddress(hardsiddll, "HardSID_Reset");
-		HardSID_Sync = (lpHardSID_Sync)GetProcAddress(hardsiddll, "HardSID_Sync");
-		HardSID_Mute = (lpHardSID_Mute)GetProcAddress(hardsiddll, "HardSID_Mute");
-		HardSID_MuteAll = (lpHardSID_MuteAll)GetProcAddress(hardsiddll, "HardSID_MuteAll");
-		InitHardSID_Mapper = (lpInitHardSID_Mapper)GetProcAddress(hardsiddll, "InitHardSID_Mapper");
-		GetHardSIDCount = (lpGetHardSIDCount)GetProcAddress(hardsiddll, "GetHardSIDCount");
-		WriteToHardSID = (lpWriteToHardSID)GetProcAddress(hardsiddll, "WriteToHardSID");
-		ReadFromHardSID = (lpReadFromHardSID)GetProcAddress(hardsiddll, "ReadFromHardSID");
-		MuteHardSID_Line = (lpMuteHardSID_Line)GetProcAddress(hardsiddll, "MuteHardSID_Line");
-		HardSID_Reset2 = (lpHardSID_Reset2)GetProcAddress(hardsiddll, "HardSID_Reset2");
-		HardSID_Unlock = (lpHardSID_Unlock)GetProcAddress(hardsiddll, "HardSID_Unlock");
-		HardSID_Try_Write = (lpHardSID_Try_Write)GetProcAddress(hardsiddll, "HardSID_Try_Write");
-		HardSID_ExternalTiming = (lpHardSID_ExternalTiming)GetProcAddress(hardsiddll, "HardSID_ExternalTiming");
-		HardSID_GetSerial = (lpHardSID_GetSerial)GetProcAddress(hardsiddll, "HardSID_GetSerial");
-		
+		HardSID_Version				= (lpHardSID_Version)GetProcAddress(hardsiddll, "HardSID_Version");
+		HardSID_Devices				= (lpHardSID_Devices)GetProcAddress(hardsiddll, "HardSID_Devices");
+		HardSID_Delay				= (lpHardSID_Delay)GetProcAddress(hardsiddll, "HardSID_Delay");
+		HardSID_Write				= (lpHardSID_Write)GetProcAddress(hardsiddll, "HardSID_Write");
+		HardSID_Read				= (lpHardSID_Read)GetProcAddress(hardsiddll, "HardSID_Read");
+		HardSID_Flush				= (lpHardSID_Flush)GetProcAddress(hardsiddll, "HardSID_Flush");
+		HardSID_SoftFlush			= (lpHardSID_SoftFlush)GetProcAddress(hardsiddll, "HardSID_SoftFlush");
+		HardSID_Lock				= (lpHardSID_Lock)GetProcAddress(hardsiddll, "HardSID_Lock");
+		HardSID_Filter				= (lpHardSID_Filter)GetProcAddress(hardsiddll, "HardSID_Filter");
+		HardSID_Reset				= (lpHardSID_Reset)GetProcAddress(hardsiddll, "HardSID_Reset");
+		HardSID_Sync				= (lpHardSID_Sync)GetProcAddress(hardsiddll, "HardSID_Sync");
+		HardSID_Mute				= (lpHardSID_Mute)GetProcAddress(hardsiddll, "HardSID_Mute");
+		HardSID_MuteAll				= (lpHardSID_MuteAll)GetProcAddress(hardsiddll, "HardSID_MuteAll");
+		InitHardSID_Mapper			= (lpInitHardSID_Mapper)GetProcAddress(hardsiddll, "InitHardSID_Mapper");
+		GetHardSIDCount				= (lpGetHardSIDCount)GetProcAddress(hardsiddll, "GetHardSIDCount");
+		WriteToHardSID				= (lpWriteToHardSID)GetProcAddress(hardsiddll, "WriteToHardSID");
+		ReadFromHardSID				= (lpReadFromHardSID)GetProcAddress(hardsiddll, "ReadFromHardSID");
+		MuteHardSID_Line			= (lpMuteHardSID_Line)GetProcAddress(hardsiddll, "MuteHardSID_Line");
+		HardSID_Reset2				= (lpHardSID_Reset2)GetProcAddress(hardsiddll, "HardSID_Reset2");
+		HardSID_Unlock				= (lpHardSID_Unlock)GetProcAddress(hardsiddll, "HardSID_Unlock");
+		HardSID_Try_Write			= (lpHardSID_Try_Write)GetProcAddress(hardsiddll, "HardSID_Try_Write");
+		HardSID_ExternalTiming		= (lpHardSID_ExternalTiming)GetProcAddress(hardsiddll, "HardSID_ExternalTiming");
+		HardSID_SetWriteBufferSize  = (lpHardSID_SetWriteBufferSize)GetProcAddress(hardsiddll, "Hard_SID_SetWriteBufferSize");
+		HardSID_GetSerial			= (lpHardSID_GetSerial)GetProcAddress(hardsiddll, "HardSID_GetSerial");
+		HardSID_SetSIDType			= (lpHardSID_SetSIDType)GetProcAddress(hardsiddll, "HardSID_SetSIDType");
+		HardSID_GetSIDType			= (lpHardSID_GetSIDType)GetProcAddress(hardsiddll, "HardSID_GetSIDType");
+
 		//check version & device count
 		DLL_Version = (int)HardSID_Version();
 		Number_Of_Devices = (int)HardSID_Devices();
 		post("SID: info: dll-version: %ld", (long)DLL_Version);
-		if ((DLL_Version < 0x0202) || Number_Of_Devices>8) {
+		if ((DLL_Version < 0x0203) || Number_Of_Devices>8) {
 			dll_initialized = FALSE;
 			error("SID: fatal! wrong hardsid.dll version or more than 8 devices");
 		}
@@ -166,8 +169,26 @@ void *sid_new(long n)		// n = int argument typed into object box (A_DEFLONG) -- 
 	}
 
 	char serial[9];
-	HardSID_GetSerial((Uint8)x->My_Device, serial);
-	post("SID: info: using device No.: %ld with serial: %s", x->My_Device, serial);
+	HardSID_GetSerial(serial, 9, (Uint8)x->My_Device);
+	int mytype = 0;
+	char mytypestring[8];
+	mytypestring[0] = 0;
+	mytype = HardSID_GetSIDType(x->My_Device);
+	switch (mytype) {
+	case 0:
+		strcpy_s(mytypestring,8, "unknown");
+		break;
+	case 1:
+		strcpy_s(mytypestring,5, "6581");
+		break;
+	case 2:
+		strcpy_s(mytypestring,5, "8580");
+		break;
+	default:
+		strcpy_s(mytypestring,6, "error");
+
+	}
+	post("SID: info: using device No.: %ld with serial: %s, a %s SID Chip are detected", x->My_Device, serial, mytypestring);
 	
 	if (cb_init(x, &x->my_cb, MY_BUFFER_SIZE, sizeof(write_event))) {
 		error("SID: fatal! CB: can't alloc mem");
@@ -319,15 +340,16 @@ void sid_init(t_sid *x) {
 
 void sid_getinfo(t_sid *x) {
 	char serialnumber[9];
-	HardSID_GetSerial(x->My_Device, serialnumber);
-	t_atom myList[6];
+	HardSID_GetSerial(serialnumber, 9, x->My_Device);
+	t_atom myList[7];
 	atom_setlong	(myList,   (long)Number_Of_Devices);
 	atom_setlong	(myList+1, (long)Number_Of_Instances);
 	atom_setlong    (myList+2, (long)x->My_Device);
 	atom_setsym		(myList+3, gensym(&serialnumber));
 	atom_setlong	(myList+4, (long)DLL_Version);
 	atom_setsym		(myList+5, gensym(version));
-	outlet_list(x->x_outlet5, 0L, 6, &myList);
+	atom_setlong	(myList+6, (long)(HardSID_GetSIDType(x->My_Device)));
+	outlet_list(x->x_outlet5, 0L, 7, &myList);
 }
 
 void sid_read(t_sid *x, t_symbol *s, long argc, t_atom *argv) {

@@ -15,6 +15,9 @@ Installation:
 
 versions history
 ----------------
+* v.1.0.1 2021-02-13
+	- prepared for new V.515 hardsid.dll
+	- add SID Type Info
 * v.1.0 2020-07-18
 	- 1.0 release
 * v.0.9.9 2020-07-09

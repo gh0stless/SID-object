@@ -4,7 +4,7 @@
 		"appversion" : 		{
 			"major" : 8,
 			"minor" : 1,
-			"revision" : 5,
+			"revision" : 8,
 			"architecture" : "x64",
 			"modernui" : 1
 		}
@@ -117,7 +117,7 @@
 					"numinlets" : 1,
 					"numoutlets" : 0,
 					"patching_rect" : [ 8.5, 6.5, 222.0, 20.0 ],
-					"text" : "SIDBlaster Poti read Test demonstration"
+					"text" : "SIDBlaster Poti read demonstration"
 				}
 
 			}
