@@ -1,23 +1,20 @@
 /*
 	@file
 	SID.c - a Max/MSP external for SIDBlaster-USB
-	© 2016-2021 by Andreas Schumm (gh0stless) for www.crazy-midi.de
-	v.1.0.1 2021-02-13
+	ï¿½ 2016-2022 by Andreas Schumm (gh0stless) for www.crazy-midi.de
+	v.1.1 2022-10-03
 */
 
 #include "ext.h"
 #include "ext_obex.h"
 #include "ext_systhread.h"
 #include <stddef.h>
+#if defined(__APPLE__)
+ #include <dlfcn.h>
+#endif
 #include "SID.h"
 
-const char* version = "v.1.0.1";
-int Number_Of_Instances = 0;
-int Number_Of_Devices = 0;
-int DLL_Version = 0;
-HINSTANCE hardsiddll = 0;
-bool dll_initialized = FALSE;
-bool InUse[8] = { false, false, false, false, false, false, false, false };
+const char* version = "v.1.1";
 
 void ext_main(void *r)
 {
@@ -52,38 +49,80 @@ void ext_main(void *r)
 	//-------------------------------------------------------------------------------------------------------------------------------------
 
 	post("SID: info: sid object %s loaded", version);
-
-	hardsiddll = LoadLibrary("hardsid.dll");
-	if (hardsiddll != 0) {
-		post("SID: info: hardsid.dll library loaded\n");
-		HardSID_Version				= (lpHardSID_Version)GetProcAddress(hardsiddll, "HardSID_Version");
-		HardSID_Devices				= (lpHardSID_Devices)GetProcAddress(hardsiddll, "HardSID_Devices");
-		HardSID_Delay				= (lpHardSID_Delay)GetProcAddress(hardsiddll, "HardSID_Delay");
-		HardSID_Write				= (lpHardSID_Write)GetProcAddress(hardsiddll, "HardSID_Write");
-		HardSID_Read				= (lpHardSID_Read)GetProcAddress(hardsiddll, "HardSID_Read");
-		HardSID_Flush				= (lpHardSID_Flush)GetProcAddress(hardsiddll, "HardSID_Flush");
-		HardSID_SoftFlush			= (lpHardSID_SoftFlush)GetProcAddress(hardsiddll, "HardSID_SoftFlush");
-		HardSID_Lock				= (lpHardSID_Lock)GetProcAddress(hardsiddll, "HardSID_Lock");
-		HardSID_Filter				= (lpHardSID_Filter)GetProcAddress(hardsiddll, "HardSID_Filter");
-		HardSID_Reset				= (lpHardSID_Reset)GetProcAddress(hardsiddll, "HardSID_Reset");
-		HardSID_Sync				= (lpHardSID_Sync)GetProcAddress(hardsiddll, "HardSID_Sync");
-		HardSID_Mute				= (lpHardSID_Mute)GetProcAddress(hardsiddll, "HardSID_Mute");
-		HardSID_MuteAll				= (lpHardSID_MuteAll)GetProcAddress(hardsiddll, "HardSID_MuteAll");
-		InitHardSID_Mapper			= (lpInitHardSID_Mapper)GetProcAddress(hardsiddll, "InitHardSID_Mapper");
-		GetHardSIDCount				= (lpGetHardSIDCount)GetProcAddress(hardsiddll, "GetHardSIDCount");
-		WriteToHardSID				= (lpWriteToHardSID)GetProcAddress(hardsiddll, "WriteToHardSID");
-		ReadFromHardSID				= (lpReadFromHardSID)GetProcAddress(hardsiddll, "ReadFromHardSID");
-		MuteHardSID_Line			= (lpMuteHardSID_Line)GetProcAddress(hardsiddll, "MuteHardSID_Line");
-		HardSID_Reset2				= (lpHardSID_Reset2)GetProcAddress(hardsiddll, "HardSID_Reset2");
-		HardSID_Unlock				= (lpHardSID_Unlock)GetProcAddress(hardsiddll, "HardSID_Unlock");
-		HardSID_Try_Write			= (lpHardSID_Try_Write)GetProcAddress(hardsiddll, "HardSID_Try_Write");
-		HardSID_ExternalTiming		= (lpHardSID_ExternalTiming)GetProcAddress(hardsiddll, "HardSID_ExternalTiming");
-		HardSID_SetWriteBufferSize  = (lpHardSID_SetWriteBufferSize)GetProcAddress(hardsiddll, "Hard_SID_SetWriteBufferSize");
-		HardSID_GetSerial			= (lpHardSID_GetSerial)GetProcAddress(hardsiddll, "HardSID_GetSerial");
-		HardSID_SetSIDType			= (lpHardSID_SetSIDType)GetProcAddress(hardsiddll, "HardSID_SetSIDType");
-		HardSID_GetSIDType			= (lpHardSID_GetSIDType)GetProcAddress(hardsiddll, "HardSID_GetSIDType");
-
-		//check version & device count
+    #if defined(_WIN32) || defined(_WIN64)
+        hardsiddll = LoadLibrary("C:\\Program Files\\Common Files\\VST3\\hardsid.dll");
+        if (hardsiddll) dll_load = true;
+        else dll_load= false;
+    #endif
+    
+    #if defined(__APPLE__)
+        void* lib_handle = dlopen("libhardsid.dylib", RTLD_LOCAL|RTLD_LAZY);
+        if (lib_handle) dll_load = true;
+        else dll_load= false;
+    #endif
+   
+    if (dll_load) {
+        post("SID: info: hardsid.dll library loaded\n");
+        #if defined(_WIN32) || defined(_WIN64)
+            HardSID_Version				= (lpHardSID_Version)GetProcAddress(hardsiddll, "HardSID_Version");
+            HardSID_Devices				= (lpHardSID_Devices)GetProcAddress(hardsiddll, "HardSID_Devices");
+            HardSID_Delay				= (lpHardSID_Delay)GetProcAddress(hardsiddll, "HardSID_Delay");
+            HardSID_Write				= (lpHardSID_Write)GetProcAddress(hardsiddll, "HardSID_Write");
+            HardSID_Read				= (lpHardSID_Read)GetProcAddress(hardsiddll, "HardSID_Read");
+            HardSID_Flush				= (lpHardSID_Flush)GetProcAddress(hardsiddll, "HardSID_Flush");
+            HardSID_SoftFlush			= (lpHardSID_SoftFlush)GetProcAddress(hardsiddll, "HardSID_SoftFlush");
+            HardSID_Lock				= (lpHardSID_Lock)GetProcAddress(hardsiddll, "HardSID_Lock");
+            HardSID_Filter				= (lpHardSID_Filter)GetProcAddress(hardsiddll, "HardSID_Filter");
+            HardSID_Reset				= (lpHardSID_Reset)GetProcAddress(hardsiddll, "HardSID_Reset");
+            HardSID_Sync				= (lpHardSID_Sync)GetProcAddress(hardsiddll, "HardSID_Sync");
+            HardSID_Mute				= (lpHardSID_Mute)GetProcAddress(hardsiddll, "HardSID_Mute");
+            HardSID_MuteAll				= (lpHardSID_MuteAll)GetProcAddress(hardsiddll, "HardSID_MuteAll");
+            InitHardSID_Mapper			= (lpInitHardSID_Mapper)GetProcAddress(hardsiddll, "InitHardSID_Mapper");
+            GetHardSIDCount				= (lpGetHardSIDCount)GetProcAddress(hardsiddll, "GetHardSIDCount");
+            WriteToHardSID				= (lpWriteToHardSID)GetProcAddress(hardsiddll, "WriteToHardSID");
+            ReadFromHardSID				= (lpReadFromHardSID)GetProcAddress(hardsiddll, "ReadFromHardSID");
+            MuteHardSID_Line			= (lpMuteHardSID_Line)GetProcAddress(hardsiddll, "MuteHardSID_Line");
+            HardSID_Reset2				= (lpHardSID_Reset2)GetProcAddress(hardsiddll, "HardSID_Reset2");
+            HardSID_Unlock				= (lpHardSID_Unlock)GetProcAddress(hardsiddll, "HardSID_Unlock");
+            HardSID_Try_Write			= (lpHardSID_Try_Write)GetProcAddress(hardsiddll, "HardSID_Try_Write");
+            HardSID_ExternalTiming		= (lpHardSID_ExternalTiming)GetProcAddress(hardsiddll, "HardSID_ExternalTiming");
+            HardSID_SetWriteBufferSize  = (lpHardSID_SetWriteBufferSize)GetProcAddress(hardsiddll, "Hard_SID_SetWriteBufferSize");
+            HardSID_GetSerial			= (lpHardSID_GetSerial)GetProcAddress(hardsiddll, "HardSID_GetSerial");
+            HardSID_SetSIDType			= (lpHardSID_SetSIDType)GetProcAddress(hardsiddll, "HardSID_SetSIDType");
+            HardSID_GetSIDType			= (lpHardSID_GetSIDType)GetProcAddress(hardsiddll, "HardSID_GetSIDType");
+        #endif
+        #if defined(__APPLE__)
+      
+             HardSID_Version            = dlsym(lib_handle, "HardSID_Version");
+             HardSID_Devices            = dlsym(lib_handle, "HardSID_Devices");
+             HardSID_Delay              = dlsym(lib_handle, "HardSID_Delay");
+             HardSID_Write              = dlsym(lib_handle, "HardSID_Write");
+             HardSID_Read               = dlsym(lib_handle, "HardSID_Read");
+             HardSID_Flush              = dlsym(lib_handle, "HardSID_Flush");
+             HardSID_SoftFlush          = dlsym(lib_handle, "HardSID_SoftFlush");
+             HardSID_Lock               = dlsym(lib_handle, "HardSID_Lock");
+             HardSID_Filter             = dlsym(lib_handle, "HardSID_Filter");
+             HardSID_Reset              = dlsym(lib_handle, "HardSID_Reset");
+             HardSID_Sync               = dlsym(lib_handle, "HardSID_Sync");
+             HardSID_Mute               = dlsym(lib_handle, "HardSID_Mute");
+             HardSID_MuteAll            = dlsym(lib_handle, "HardSID_MuteAll");
+             InitHardSID_Mapper         = dlsym(lib_handle, "InitHardSID_Mapper");
+             GetHardSIDCount            = dlsym(lib_handle, "GetHardSIDCount");
+             WriteToHardSID             = dlsym(lib_handle, "WriteToHardSID");
+             ReadFromHardSID            = dlsym(lib_handle, "ReadFromHardSID");
+             MuteHardSID_Line           = dlsym(lib_handle, "MuteHardSID_Line");
+             HardSID_Reset2             = dlsym(lib_handle, "HardSID_Reset2");
+             HardSID_Unlock             = dlsym(lib_handle, "HardSID_Unlock");
+             HardSID_Try_Write          = dlsym(lib_handle, "HardSID_Try_Write");
+             HardSID_ExternalTiming     = dlsym(lib_handle, "HardSID_ExternalTiming");
+             SetWriteBufferSize         = dlsym(lib_handle, "HardSID_SetWriteBufferSize");
+             HardSID_GetSerial          = dlsym(lib_handle, "HardSID_GetSerial");
+             HardSID_GetSIDType         = dlsym(lib_handle, "HardSID_GetSIDType");
+             HardSID_SetSIDType         = dlsym(lib_handle, "HardSID_SetSIDType");
+             HardSID_Uninitialize       = dlsym(lib_handle, "HardSID_Uninitialize");
+      
+        #endif
+        //check version & device count
 		DLL_Version = (int)HardSID_Version();
 		Number_Of_Devices = (int)HardSID_Devices();
 		post("SID: info: dll-version: %ld", (long)DLL_Version);
@@ -176,16 +215,16 @@ void *sid_new(long n)		// n = int argument typed into object box (A_DEFLONG) -- 
 	mytype = HardSID_GetSIDType(x->My_Device);
 	switch (mytype) {
 	case 0:
-		strcpy_s(mytypestring,8, "unknown");
+		stpcpy(mytypestring, "unknown");
 		break;
 	case 1:
-		strcpy_s(mytypestring,5, "6581");
+		stpcpy(mytypestring, "6581");
 		break;
 	case 2:
-		strcpy_s(mytypestring,5, "8580");
+		stpcpy(mytypestring, "8580");
 		break;
 	default:
-		strcpy_s(mytypestring,6, "error");
+		stpcpy(mytypestring, "error");
 
 	}
 	post("SID: info: using device No.: %ld with serial: %s, a %s SID Chip are detected", x->My_Device, serial, mytypestring);
@@ -275,7 +314,7 @@ void sid_init(t_sid *x) {
 	//Init Registers
 	push_event(x, 0, 0x00);
 	systhread_sleep(300);
-	BYTE r;
+	Uint8 r;
 	for (r = 0; r <= (NUMSIDREGS-1); r++) {
 		push_event(x, r, 0x00);
 	}

@@ -6,15 +6,23 @@ This object allows full access to a real SID-Chip.
 
 Installation:
 -------------
-- copy SID-object folder to
- ...\documents\Max 7\packages or to ...\documents\Max 8\packages
+* Windows
+- copy SID-object folder to your Max Package folder
+- copy hardsid.dll to C:\Program Files\Common Files\VST3\
+- connect SIDBlaster
 
-- copy the appropriate DLL into the program directory of Max
+* Mac
+- copy SID-object folder to your Max Package folder
+- install ftdi d2xx driver-lib and helper tool (from website)
+- install libhardsid.dylib (copy to /usr/local/lib/)
+- connect SIDBlaster
 
-- study the attached Max patches and reference page for feature learning
+* study the attached Max patches and reference page for feature learning
 
 versions history
 ----------------
+* v.1.1 2022-10-03
+	- full MacOS support
 * v.1.0.1 2021-02-13
 	- prepared for new V.515 hardsid.dll
 	- add SID Type Info
@@ -48,8 +56,9 @@ see: [https://github.com/Galfodo/SIDBlasterUSB_HardSID-emulation-driver](https:/
 Thanks to:
 
 *Stein Pedersen and Wilfred Bos for there support.
+*Ken Händel for Linux/Mac port of the hardsid.dll
 
-##### Copyright © 2016-2020 [www.crazy-midi.de](http://www.crazy-midi.de)
+##### Copyright © 2016-2022 [www.crazy-midi.de](http://www.crazy-midi.de)
 
 Andreas Schumm (gh0stless)
 contact: info@crazy-midi.de

@@ -1,3 +1,5 @@
+* v.1.1 2022-10-03
+        -full MacOS support
 * v.1.0.1 2021-02-13
 	- adapted for a new version of the hardsid.dll
 	- added SIDType to Info

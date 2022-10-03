@@ -2,7 +2,18 @@
 
 typedef unsigned char	Uint8;
 typedef unsigned short	Uint16;
-typedef unsigned char	boolean;
+//typedef unsigned char	boolean;
+
+int Number_Of_Instances = 0;
+int Number_Of_Devices = 0;
+int DLL_Version = 0;
+bool dll_load = false;
+bool dll_initialized = false;
+bool InUse[8] = { false, false, false, false, false, false, false, false };
+
+#if defined(_WIN32) || defined(_WIN64)
+HINSTANCE hardsiddll = 0;
+#endif
 
 #define NUMSIDREGS 0x19 // numbers of (writable) SID-registers
 #define SIDWRITEDELAY 14 // lda $xxxx,x 4 cycles, sta $d400,x 5 cycles, dex 2 cycles, bpl 3 cycles
@@ -15,6 +26,7 @@ typedef unsigned char	boolean;
 #define FRAME_IN_CYCLES (17734475 / 18 / 50 )	// 50Hz in cycles for PAL clock
 #define MY_BUFFER_SIZE 4096
 
+#if defined(_WIN32) || defined(_WIN64)
 typedef Uint16	(CALLBACK* lpHardSID_Version)(void);
 typedef Uint8	(CALLBACK* lpHardSID_Devices)(void);
 typedef void    (CALLBACK* lpHardSID_Delay)(Uint8 DeviceID, Uint16 Cycles);
@@ -68,6 +80,65 @@ lpHardSID_SetWriteBufferSize HardSID_SetWriteBufferSize = NULL;
 lpHardSID_GetSerial HardSID_GetSerial = NULL;
 lpHardSID_SetSIDType HardSID_SetSIDType = NULL;
 lpHardSID_GetSIDType HardSID_GetSIDType = NULL;
+#endif
+
+#if defined(__APPLE__)
+typedef Uint16  (*lpHardSID_Version)(void);
+typedef Uint8   (*lpHardSID_Devices)(void);
+typedef void    (*lpHardSID_Delay)(Uint8 DeviceID, Uint16 Cycles);
+typedef void    (*lpHardSID_Write)(Uint8 DeviceID, Uint16 Cycles, Uint8 SID_reg, Uint8 Data);
+typedef Uint8   (*lpHardSID_Read)(Uint8 DeviceID, Uint16 Cycles, Uint8 SID_reg);
+typedef void    (*lpHardSID_Flush)(Uint8 DeviceID);
+typedef void    (*lpHardSID_SoftFlush)(Uint8 DeviceID);
+typedef bool    (*lpHardSID_Lock)(Uint8 DeviceID);
+typedef void    (*lpHardSID_Filter)(Uint8 DeviceID, bool Filter);
+typedef void    (*lpHardSID_Reset)(Uint8 DeviceID);
+typedef void    (*lpHardSID_Sync)(Uint8 DeviceID);
+typedef void    (*lpHardSID_Mute)(Uint8 DeviceID, Uint8 Channel, bool Mute);
+typedef void    (*lpHardSID_MuteAll)(Uint8 DeviceID, bool Mute);
+typedef void    (*lpInitHardSID_Mapper)(void);
+typedef Uint8   (*lpGetHardSIDCount)(void);
+typedef void    (*lpWriteToHardSID)(Uint8 DeviceID, Uint8 SID_reg, Uint8 Data);
+typedef Uint8   (*lpReadFromHardSID)(Uint8 DeviceID, Uint8 SID_reg);
+typedef void    (*lpMuteHardSID_Line)(int Mute);
+typedef void    (*lpHardSID_Reset2)(Uint8 DeviceID, Uint8 Volume);
+typedef void    (*lpHardSID_Unlock)(Uint8 DeviceID);
+typedef Uint8   (*lpHardSID_Try_Write)(Uint8 DeviceID, Uint16 Cycles, Uint8 SID_reg, Uint8 Data);
+typedef bool    (*lpHardSID_ExternalTiming)(Uint8 DeviceID);
+typedef void    (*lpHardSID_SetWriteBufferSize)(Uint8 buffersize);
+typedef void    (*lpHardSID_GetSerial)(char* output, int buffersize, Uint8 DeviceID);
+typedef int     (*lpHardSID_SetSIDType)(Uint8 DeviceID, int sidtype);
+typedef int     (*lpHardSID_GetSIDType)(Uint8 DeviceID);
+typedef void    (*lpHardSID_Uninitialize)(void);
+
+lpHardSID_Version HardSID_Version = NULL;
+lpHardSID_Devices HardSID_Devices = NULL;
+lpHardSID_Delay HardSID_Delay = NULL;
+lpHardSID_Write HardSID_Write = NULL;
+lpHardSID_Read HardSID_Read = NULL;
+lpHardSID_Flush HardSID_Flush = NULL;
+lpHardSID_SoftFlush HardSID_SoftFlush = NULL;
+lpHardSID_Lock HardSID_Lock = NULL;
+lpHardSID_Filter HardSID_Filter = NULL;
+lpHardSID_Reset HardSID_Reset = NULL;
+lpHardSID_Sync HardSID_Sync = NULL;
+lpHardSID_Mute HardSID_Mute = NULL;
+lpHardSID_MuteAll HardSID_MuteAll = NULL;
+lpInitHardSID_Mapper InitHardSID_Mapper = NULL;
+lpGetHardSIDCount GetHardSIDCount = NULL;
+lpWriteToHardSID WriteToHardSID = NULL;
+lpReadFromHardSID ReadFromHardSID = NULL;
+lpMuteHardSID_Line MuteHardSID_Line = NULL;
+lpHardSID_Reset2 HardSID_Reset2 = NULL;
+lpHardSID_Unlock HardSID_Unlock = NULL;
+lpHardSID_Try_Write HardSID_Try_Write = NULL;
+lpHardSID_ExternalTiming HardSID_ExternalTiming = NULL;
+lpHardSID_SetWriteBufferSize SetWriteBufferSize = NULL;
+lpHardSID_GetSerial HardSID_GetSerial = NULL;
+lpHardSID_SetSIDType HardSID_SetSIDType = NULL;
+lpHardSID_GetSIDType HardSID_GetSIDType = NULL;
+lpHardSID_Uninitialize HardSID_Uninitialize = NULL;
+#endif
 
 typedef enum {
 	HSID_USB_WSTATE_OK = 1, HSID_USB_WSTATE_BUSY,
