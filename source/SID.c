@@ -14,7 +14,6 @@
 #endif
 #include "SID.h"
 
-
 const char* version = "v.1.1";
 
 void ext_main(void *r)
@@ -57,7 +56,7 @@ void ext_main(void *r)
     #endif
     
     #if defined(__APPLE__)
-        void* lib_handle = dlopen("libhardsid.dylib", RTLD_LOCAL|RTLD_LAZY);
+        void* lib_handle = dlopen("/usr/local/lib/libhardsid.dylib", RTLD_LOCAL|RTLD_LAZY);
         if (lib_handle) dll_load = true;
         else dll_load= false;
     #endif
@@ -215,20 +214,6 @@ void *sid_new(long n)		// n = int argument typed into object box (A_DEFLONG) -- 
 	mytypestring[0] = 0;
 	mytype = HardSID_GetSIDType(x->My_Device);
 	switch (mytype) {
-#if defined(_WIN32) || defined(_WIN64)
-	case 0:
-		strcpy_s(mytypestring,8, "unknown");
-		break;
-	case 1:
-		strcpy_s(mytypestring,5, "6581");
-		break;
-	case 2:
-		strcpy_s(mytypestring,5, "8580");
-		break;
-	default:
-		strcpy_s(mytypestring,6, "error");
-#endif
-#if defined(__APPLE__)
 	case 0:
 		stpcpy(mytypestring, "unknown");
 		break;
@@ -240,7 +225,6 @@ void *sid_new(long n)		// n = int argument typed into object box (A_DEFLONG) -- 
 		break;
 	default:
 		stpcpy(mytypestring, "error");
-#endif		
 
 	}
 	post("SID: info: using device No.: %ld with serial: %s, a %s SID Chip are detected", x->My_Device, serial, mytypestring);
