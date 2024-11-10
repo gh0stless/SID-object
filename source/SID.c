@@ -215,16 +215,16 @@ void *sid_new(long n)		// n = int argument typed into object box (A_DEFLONG) -- 
 	mytype = HardSID_GetSIDType(x->My_Device);
 	switch (mytype) {
 	case 0:
-		stpcpy(mytypestring, "unknown");
+		my_stpcpy(mytypestring, "unknown");
 		break;
 	case 1:
-		stpcpy(mytypestring, "6581");
+		my_stpcpy(mytypestring, "6581");
 		break;
 	case 2:
-		stpcpy(mytypestring, "8580");
+		my_stpcpy(mytypestring, "8580");
 		break;
 	default:
-		stpcpy(mytypestring, "error");
+		my_stpcpy(mytypestring, "error");
 
 	}
 	post("SID: info: using device No.: %ld with serial: %s, a %s SID Chip are detected", x->My_Device, serial, mytypestring);
@@ -1400,7 +1400,7 @@ int cb_pop_front(t_sid *x, circular_buffer *cb, void *item)
 	return (0);
 }
 
-char* stpcpy(char* dest, const char* src) {
+char* my_stpcpy(char* dest, const char* src) {
 	while ((*dest++ = *src++)) {}
 	return --dest;
 }

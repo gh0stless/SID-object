@@ -239,6 +239,6 @@ void cb_free(t_sid *x, circular_buffer *cb);
 int cb_push_back(t_sid *x, circular_buffer *cb, const void *item);
 int cb_pop_front(t_sid *x, circular_buffer *cb, void *item);
 
-char* stpcpy(char* dest, const char* src);
+char* my_stpcpy(char* dest, const char* src);
 
 t_class *sid_class;		// global pointer to the object class - so max can reference the object
