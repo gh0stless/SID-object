@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 227.0, 170.0, 1178.0, 714.0 ],
+		"rect" : [ 719.0, 421.0, 327.0, 270.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 1,
 		"default_fontsize" : 12.0,
@@ -94,7 +94,7 @@
 					"numoutlets" : 0,
 					"patching_rect" : [ 818.0, 778.0, 51.0, 20.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 187.166664000000083, 129.0, 51.0, 20.0 ],
+					"presentation_rect" : [ 166.0, 166.0, 51.0, 20.0 ],
 					"text" : "playing"
 				}
 
@@ -109,7 +109,7 @@
 					"parameter_enable" : 0,
 					"patching_rect" : [ 790.0, 774.0, 24.0, 24.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 159.75, 125.0, 24.0, 24.0 ]
+					"presentation_rect" : [ 129.75, 164.0, 24.0, 24.0 ]
 				}
 
 			}
@@ -120,7 +120,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 2,
 					"outlettype" : [ "", "" ],
-					"patching_rect" : [ 687.0, 650.0, 60.0, 22.0 ],
+					"patching_rect" : [ 686.0, 631.0, 60.0, 22.0 ],
 					"saved_object_attributes" : 					{
 						"filename" : "ASID.js",
 						"parameter_enable" : 0
@@ -195,7 +195,7 @@
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 647.0, 732.0, 29.5, 22.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 38.5, 125.0, 29.5, 22.0 ],
+					"presentation_rect" : [ 8.5, 165.0, 29.5, 22.0 ],
 					"text" : "init"
 				}
 
@@ -209,7 +209,7 @@
 					"outlettype" : [ "bang", "list", "int", "int", "int", "int" ],
 					"patching_rect" : [ 695.0, 774.0, 71.5, 22.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 77.75, 125.0, 71.5, 22.0 ],
+					"presentation_rect" : [ 47.75, 165.0, 71.5, 22.0 ],
 					"text" : "SID"
 				}
 
@@ -222,7 +222,7 @@
 					"numoutlets" : 0,
 					"patching_rect" : [ 561.0, 778.0, 51.0, 20.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 172.166664000000083, 114.0, 51.0, 20.0 ],
+					"presentation_rect" : [ 166.0, 129.0, 51.0, 20.0 ],
 					"text" : "playing"
 				}
 
@@ -237,7 +237,7 @@
 					"parameter_enable" : 0,
 					"patching_rect" : [ 533.0, 774.0, 24.0, 24.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 144.75, 110.0, 24.0, 24.0 ]
+					"presentation_rect" : [ 129.75, 127.0, 24.0, 24.0 ]
 				}
 
 			}
@@ -248,7 +248,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 2,
 					"outlettype" : [ "", "" ],
-					"patching_rect" : [ 430.0, 650.0, 60.0, 22.0 ],
+					"patching_rect" : [ 430.0, 622.0, 60.0, 22.0 ],
 					"saved_object_attributes" : 					{
 						"filename" : "ASID.js",
 						"parameter_enable" : 0
@@ -323,7 +323,7 @@
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 390.0, 732.0, 29.5, 22.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 23.5, 110.0, 29.5, 22.0 ],
+					"presentation_rect" : [ 8.5, 128.0, 29.5, 22.0 ],
 					"text" : "init"
 				}
 
@@ -337,7 +337,7 @@
 					"outlettype" : [ "bang", "list", "int", "int", "int", "int" ],
 					"patching_rect" : [ 438.0, 774.0, 71.5, 22.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 62.75, 110.0, 71.5, 22.0 ],
+					"presentation_rect" : [ 47.75, 128.0, 71.5, 22.0 ],
 					"text" : "SID"
 				}
 
@@ -374,7 +374,7 @@
 					"numoutlets" : 0,
 					"patching_rect" : [ 312.083335999999917, 773.0, 51.0, 20.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 157.166664000000083, 99.0, 51.0, 20.0 ],
+					"presentation_rect" : [ 166.0, 97.0, 51.0, 20.0 ],
 					"text" : "playing"
 				}
 
@@ -399,9 +399,9 @@
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 8.5, 27.5, 212.0, 20.0 ],
+					"patching_rect" : [ 8.5, 34.0, 212.0, 20.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 8.5, 133.5, 212.0, 20.0 ],
+					"presentation_rect" : [ 8.5, 209.0, 212.0, 20.0 ],
 					"text" : "©2023 by gh0stless for crazy-midi.de"
 				}
 
@@ -426,7 +426,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 2,
 					"outlettype" : [ "", "" ],
-					"patching_rect" : [ 181.083335999999917, 645.0, 60.0, 22.0 ],
+					"patching_rect" : [ 176.083335999999917, 622.0, 60.0, 22.0 ],
 					"saved_object_attributes" : 					{
 						"filename" : "ASID.js",
 						"parameter_enable" : 0
@@ -606,7 +606,7 @@
 					"fontname" : "Arial",
 					"fontsize" : 13.0,
 					"id" : "obj-22",
-					"items" : [ "Microsoft GS Wavetable Synth", ",", "2- ESI ESP1010e MIDI 1", ",", "2- ESI ESP1010e MIDI 2", ",", "TouchOSC Bridge", ",", "HAL2019-1", ",", "loopMIDI Port", ",", "UBrige 1", ",", "UBrige 2", ",", "HAL2019-2", ",", "1-M8U MIDI", ",", "2-M8U MIDI", ",", "3-M8U MIDI", ",", "4-M8U MIDI", ",", "5-M8U MIDI", ",", "6-M8U MIDI", ",", "7-M8U MIDI", ",", "8-M8U MIDI" ],
+					"items" : [ "Microsoft GS Wavetable Synth", ",", "2- ESI ESP1010e MIDI 1", ",", "2- ESI ESP1010e MIDI 2", ",", "TouchOSC Bridge", ",", "loopMIDI Port", ",", "UBrige 1", ",", "UBrige 2", ",", "HAL2019-1", ",", "HAL2019-2", ",", "1-M8U MIDI", ",", "2-M8U MIDI", ",", "3-M8U MIDI", ",", "4-M8U MIDI", ",", "5-M8U MIDI", ",", "6-M8U MIDI", ",", "7-M8U MIDI", ",", "8-M8U MIDI" ],
 					"maxclass" : "umenu",
 					"numinlets" : 1,
 					"numoutlets" : 3,
@@ -617,7 +617,7 @@
 					"presentation_rect" : [ 8.5, 59.0, 150.0, 23.0 ],
 					"saved_attribute_attributes" : 					{
 						"valueof" : 						{
-							"parameter_enum" : [ "Microsoft GS Wavetable Synth", "2- ESI ESP1010e MIDI 1", "2- ESI ESP1010e MIDI 2", "TouchOSC Bridge", "HAL2019-1", "loopMIDI Port", "UBrige 1", "UBrige 2", "HAL2019-2", "1-M8U MIDI", "2-M8U MIDI", "3-M8U MIDI", "4-M8U MIDI", "5-M8U MIDI", "6-M8U MIDI", "7-M8U MIDI", "8-M8U MIDI" ],
+							"parameter_enum" : [ "Microsoft GS Wavetable Synth", "2- ESI ESP1010e MIDI 1", "2- ESI ESP1010e MIDI 2", "TouchOSC Bridge", "loopMIDI Port", "UBrige 1", "UBrige 2", "HAL2019-1", "HAL2019-2", "1-M8U MIDI", "2-M8U MIDI", "3-M8U MIDI", "4-M8U MIDI", "5-M8U MIDI", "6-M8U MIDI", "7-M8U MIDI", "8-M8U MIDI" ],
 							"parameter_longname" : "umenu[1]",
 							"parameter_mmax" : 16,
 							"parameter_modmode" : 0,
@@ -767,7 +767,7 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-34", 1 ],
-					"midpoints" : [ 737.5, 674.0, 719.5, 674.0 ],
+					"midpoints" : [ 736.5, 674.0, 719.5, 674.0 ],
 					"source" : [ "obj-29", 1 ]
 				}
 
@@ -775,7 +775,7 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-34", 0 ],
-					"midpoints" : [ 696.5, 674.0, 705.666664000000083, 674.0, 705.666664000000083, 710.0, 704.5, 710.0 ],
+					"midpoints" : [ 695.5, 674.0, 705.666664000000083, 674.0, 705.666664000000083, 710.0, 704.5, 710.0 ],
 					"source" : [ "obj-29", 0 ]
 				}
 
@@ -881,7 +881,7 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-30", 1 ],
-					"midpoints" : [ 231.583335999999917, 669.0, 213.583335999999917, 669.0 ],
+					"midpoints" : [ 226.583335999999917, 669.0, 213.583335999999917, 669.0 ],
 					"source" : [ "obj-5", 1 ]
 				}
 
@@ -889,7 +889,7 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-30", 0 ],
-					"midpoints" : [ 190.583335999999917, 669.0, 199.75, 669.0, 199.75, 705.0, 198.583335999999917, 705.0 ],
+					"midpoints" : [ 185.583335999999917, 669.0, 199.75, 669.0, 199.75, 705.0, 198.583335999999917, 705.0 ],
 					"source" : [ "obj-5", 0 ]
 				}
 
@@ -1000,7 +1000,7 @@
 ,
 		"dependency_cache" : [ 			{
 				"name" : "ASID.js",
-				"bootpath" : "~/Documents/Max 8/Projects/ASID-Player/code",
+				"bootpath" : "~/Documents/Max 8/Packages/SID-object/patchers/ASID-Player/code",
 				"patcherrelativepath" : "../code",
 				"type" : "TEXT",
 				"implicit" : 1
