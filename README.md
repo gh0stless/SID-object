@@ -21,6 +21,8 @@ Installation:
 
 versions history
 ----------------
+* v1.5 2024-11-09
+	- better player thread
 * v.1.1 2022-10-03
 	- full MacOS support
 * v.1.0.1 2021-02-13
